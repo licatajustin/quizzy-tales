@@ -1,9 +1,14 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import Image from "next/image"
 import { RotateCcw } from "lucide-react"
 
+import {
+  getAnonymousId,
+  getTrackingContext,
+  trackEvent,
+} from "@/lib/analytics/client"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { calculateWinningOutcome } from "@/lib/quiz/scoring"
@@ -11,18 +16,28 @@ import type { PublishedQuizSnapshot } from "@/lib/quiz/types"
 import { cn } from "@/lib/utils"
 
 type QuizPlayerProps = {
+  quizId?: string
   snapshot: PublishedQuizSnapshot
   isPreview?: boolean
 }
 
 type PlayerState = "intro" | "playing" | "result"
 
-export function QuizPlayer({ snapshot, isPreview = false }: QuizPlayerProps) {
+export function QuizPlayer({
+  quizId,
+  snapshot,
+  isPreview = false,
+}: QuizPlayerProps) {
   const [state, setState] = useState<PlayerState>("intro")
   const [questionIndex, setQuestionIndex] = useState(0)
   const [selectedByQuestion, setSelectedByQuestion] = useState<
     Record<string, string[]>
   >({})
+
+  const sessionIdRef = useRef(crypto.randomUUID())
+  const trackedViewRef = useRef(false)
+  const trackedCompleteRef = useRef(false)
+  const trackingEnabled = Boolean(quizId) && !isPreview
 
   const questions = useMemo(
     () => [...snapshot.questions].sort((a, b) => a.sort_order - b.sort_order),
@@ -67,10 +82,75 @@ export function QuizPlayer({ snapshot, isPreview = false }: QuizPlayerProps) {
       : outcomes[0]
   }, [allSelectedAnswerIds, allAnswers, outcomes])
 
+  useEffect(() => {
+    if (!trackingEnabled || !quizId || trackedViewRef.current) {
+      return
+    }
+
+    trackedViewRef.current = true
+    trackEvent({
+      event: "view",
+      quizId,
+      sessionId: sessionIdRef.current,
+      anonymousId: getAnonymousId(),
+      ...getTrackingContext(),
+    })
+  }, [trackingEnabled, quizId])
+
+  useEffect(() => {
+    if (
+      !trackingEnabled ||
+      !quizId ||
+      state !== "result" ||
+      !winningOutcome ||
+      trackedCompleteRef.current
+    ) {
+      return
+    }
+
+    trackedCompleteRef.current = true
+    trackEvent({
+      event: "complete",
+      quizId,
+      sessionId: sessionIdRef.current,
+      resultId: winningOutcome.id,
+      outcomeId: winningOutcome.id,
+    })
+  }, [state, trackingEnabled, quizId, winningOutcome])
+
   function resetQuiz() {
+    sessionIdRef.current = crypto.randomUUID()
+    trackedCompleteRef.current = false
     setState("intro")
     setQuestionIndex(0)
     setSelectedByQuestion({})
+  }
+
+  function trackAnswers(questionId: string, answerIds: string[]) {
+    if (!trackingEnabled || answerIds.length === 0) {
+      return
+    }
+
+    trackEvent({
+      event: "answer",
+      sessionId: sessionIdRef.current,
+      questionId,
+      answerIds,
+    })
+  }
+
+  function startQuiz() {
+    if (trackingEnabled && quizId) {
+      trackEvent({
+        event: "start",
+        quizId,
+        sessionId: sessionIdRef.current,
+        anonymousId: getAnonymousId(),
+        ...getTrackingContext(),
+      })
+    }
+
+    setState("playing")
   }
 
   function toggleAnswer(answerId: string) {
@@ -86,7 +166,9 @@ export function QuizPlayer({ snapshot, isPreview = false }: QuizPlayerProps) {
         return { ...previous, [currentQuestion.id]: next }
       }
 
-      return { ...previous, [currentQuestion.id]: [answerId] }
+      const next = [answerId]
+      trackAnswers(currentQuestion.id, next)
+      return { ...previous, [currentQuestion.id]: next }
     })
 
     if (!currentQuestion.allow_multiple) {
@@ -99,6 +181,10 @@ export function QuizPlayer({ snapshot, isPreview = false }: QuizPlayerProps) {
   }
 
   function submitMultiple() {
+    if (currentQuestion) {
+      trackAnswers(currentQuestion.id, selectedForCurrent)
+    }
+
     if (questionIndex >= questions.length - 1) {
       setState("result")
     } else {
@@ -143,7 +229,7 @@ export function QuizPlayer({ snapshot, isPreview = false }: QuizPlayerProps) {
           type="button"
           size="lg"
           className="mx-auto rounded-full px-8"
-          onClick={() => setState("playing")}
+          onClick={startQuiz}
         >
           Start the quiz
         </Button>

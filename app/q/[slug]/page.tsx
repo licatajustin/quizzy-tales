@@ -40,7 +40,7 @@ export default async function PublicQuizPage({ params }: PublicQuizPageProps) {
 
   return (
     <div className="min-h-svh bg-background">
-      <QuizPlayer snapshot={snapshot} />
+      <QuizPlayer quizId={quiz.id} snapshot={snapshot} />
     </div>
   )
 }
