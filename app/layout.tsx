@@ -1,5 +1,6 @@
 import { Geist_Mono, Public_Sans } from "next/font/google"
 import type { Metadata } from "next"
+import { Toaster } from "sonner"
 
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
@@ -39,6 +40,7 @@ export default function RootLayout({
     >
       <body>
         <ThemeProvider>{children}</ThemeProvider>
+        <Toaster richColors closeButton />
       </body>
     </html>
   )
