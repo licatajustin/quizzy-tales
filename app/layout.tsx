@@ -1,9 +1,10 @@
 import { Geist_Mono, Public_Sans } from "next/font/google"
 import type { Metadata } from "next"
-import { Toaster } from "sonner"
 
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
+import { Toaster } from "@/components/ui/sonner"
+import { TooltipProvider } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
 
 const publicSans = Public_Sans({
@@ -39,8 +40,10 @@ export default function RootLayout({
       )}
     >
       <body>
-        <ThemeProvider>{children}</ThemeProvider>
-        <Toaster richColors closeButton />
+        <ThemeProvider>
+          <TooltipProvider>{children}</TooltipProvider>
+          <Toaster />
+        </ThemeProvider>
       </body>
     </html>
   )

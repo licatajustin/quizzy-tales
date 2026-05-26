@@ -42,7 +42,7 @@ export default async function OnboardingPlaceholderPage() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col gap-8 px-6 py-10">
+    <div className="mx-auto flex w-full max-w-2xl flex-col gap-8">
       <Card>
         <CardHeader>
           <CardTitle>Onboarding</CardTitle>

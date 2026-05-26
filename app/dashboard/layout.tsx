@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation"
 
+import { DashboardChrome } from "@/components/dashboard/dashboard-chrome"
 import { createClient } from "@/lib/supabase/server"
 
 export default async function DashboardLayout({
@@ -16,14 +17,20 @@ export default async function DashboardLayout({
     redirect("/auth/login")
   }
 
+  const { data: author } = await supabase
+    .from("authors")
+    .select("display_name")
+    .eq("id", user.id)
+    .maybeSingle()
+
   return (
-    <div className="min-h-svh bg-background">
-      <div className="border-b border-border/60">
-        <div className="mx-auto flex h-14 max-w-6xl items-center px-6">
-          <p className="text-sm font-medium">QuizzyTales Dashboard</p>
-        </div>
-      </div>
+    <DashboardChrome
+      user={{
+        name: author?.display_name ?? "Author",
+        email: user.email ?? "",
+      }}
+    >
       {children}
-    </div>
+    </DashboardChrome>
   )
 }
