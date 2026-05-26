@@ -9,6 +9,7 @@ import { publishQuiz, unpublishQuiz } from "@/app/actions/quizzes"
 import { DetailsTab } from "@/components/dashboard/quiz-editor/details-tab"
 import { OutcomesTab } from "@/components/dashboard/quiz-editor/outcomes-tab"
 import { QuestionsTab } from "@/components/dashboard/quiz-editor/questions-tab"
+import { UpgradePrompt } from "@/components/subscription/upgrade-prompt"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -17,12 +18,13 @@ import type { QuizDraft } from "@/lib/quiz/types"
 
 type QuizEditorProps = {
   draft: QuizDraft
+  canPublish: boolean
 }
 
-export function QuizEditor({ draft }: QuizEditorProps) {
+export function QuizEditor({ draft, canPublish }: QuizEditorProps) {
   const router = useRouter()
   const validationErrors = validateQuizForPublish(draft)
-  const canPublish = validationErrors.length === 0
+  const canPublishQuiz = canPublish && validationErrors.length === 0
 
   async function handlePublish() {
     const result = await publishQuiz(draft.quiz.id)
@@ -59,7 +61,12 @@ export function QuizEditor({ draft }: QuizEditorProps) {
             </Badge>
           </div>
           <p className="text-sm text-muted-foreground">{draft.quiz.book_title}</p>
-          {!canPublish ? (
+          {draft.quiz.status === "draft" && !canPublish ? (
+            <UpgradePrompt
+              title="Publishing is a Pro feature"
+              description="Upgrade to share your quiz at a public link and start collecting reader analytics."
+            />
+          ) : draft.quiz.status === "draft" && !canPublishQuiz ? (
             <p className="text-xs text-muted-foreground">
               Before publishing: {validationErrors.join(" ")}
             </p>
@@ -96,7 +103,7 @@ export function QuizEditor({ draft }: QuizEditorProps) {
             <Button
               type="button"
               className="rounded-full"
-              disabled={!canPublish}
+              disabled={!canPublishQuiz}
               onClick={handlePublish}
             >
               <Rocket data-icon="inline-start" />

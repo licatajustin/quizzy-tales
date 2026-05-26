@@ -1,5 +1,6 @@
 "use client"
 
+import { useRef } from "react"
 import {
   Avatar,
   AvatarFallback,
@@ -19,7 +20,8 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
-import { ChevronsUpDown, LogOut } from "lucide-react"
+import Link from "next/link"
+import { ChevronsUpDown, CreditCard, LogOut } from "lucide-react"
 
 import { signOut } from "@/app/actions/auth"
 
@@ -41,6 +43,7 @@ function getInitials(name: string) {
 
 export function NavUser({ user }: NavUserProps) {
   const { isMobile } = useSidebar()
+  const signOutFormRef = useRef<HTMLFormElement>(null)
   const initials = getInitials(user.name || "Author")
 
   return (
@@ -86,15 +89,20 @@ export function NavUser({ user }: NavUserProps) {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <form action={signOut} className="w-full">
-                <button
-                  type="submit"
-                  className="flex w-full cursor-default items-center gap-2 rounded-xl px-2 py-1.5 text-sm outline-hidden"
-                >
-                  <LogOut className="size-4" />
-                  Sign out
-                </button>
-              </form>
+              <Link href="/dashboard/settings/billing">
+                <CreditCard />
+                Billing
+              </Link>
+            </DropdownMenuItem>
+            <form ref={signOutFormRef} action={signOut} className="hidden" />
+            <DropdownMenuItem
+              onSelect={(event) => {
+                event.preventDefault()
+                signOutFormRef.current?.requestSubmit()
+              }}
+            >
+              <LogOut />
+              Sign out
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

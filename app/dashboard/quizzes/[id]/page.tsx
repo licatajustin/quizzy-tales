@@ -2,6 +2,9 @@ import { notFound, redirect } from "next/navigation"
 
 import { QuizEditor } from "@/components/dashboard/quiz-editor/quiz-editor"
 import { getQuizDraft } from "@/lib/quiz/queries"
+import {
+  getSubscriptionAccessForUser,
+} from "@/lib/subscription-server"
 import { createClient } from "@/lib/supabase/server"
 
 type QuizEditorPageProps = {
@@ -25,9 +28,14 @@ export default async function QuizEditorPage({ params }: QuizEditorPageProps) {
     notFound()
   }
 
+  const access = await getSubscriptionAccessForUser(supabase, user.id)
+
   return (
     <div className="mx-auto w-full max-w-5xl">
-      <QuizEditor draft={draft} />
+      <QuizEditor
+        draft={draft}
+        canPublish={access?.canPublish ?? false}
+      />
     </div>
   )
 }

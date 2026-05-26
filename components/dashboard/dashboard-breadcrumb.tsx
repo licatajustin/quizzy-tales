@@ -19,6 +19,15 @@ const SEGMENT_LABELS: Record<string, string> = {
   preview: "Preview",
   analytics: "Analytics",
   onboarding: "Onboarding",
+  settings: "Settings",
+  billing: "Billing",
+}
+
+function formatSegmentLabel(segment: string) {
+  return segment
+    .split("-")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ")
 }
 
 function getBreadcrumbs(pathname: string) {
@@ -44,7 +53,7 @@ function getBreadcrumbs(pathname: string) {
 
     const label = isUuid
       ? "Editor"
-      : (SEGMENT_LABELS[segment] ?? segment.replace(/-/g, " "))
+      : (SEGMENT_LABELS[segment] ?? formatSegmentLabel(segment))
 
     crumbs.push({
       label,

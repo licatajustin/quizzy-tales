@@ -9,6 +9,11 @@ import {
   validateQuizForPublish,
 } from "@/lib/quiz/published-snapshot"
 import { generateSlug } from "@/lib/quiz/slug"
+import {
+  getAuthorBillingProfile,
+  getAuthorQuizCount,
+} from "@/lib/subscription-server"
+import { getSubscriptionAccess } from "@/lib/subscription"
 import { createClient } from "@/lib/supabase/server"
 
 export type ActionResult = {
@@ -83,6 +88,20 @@ function revalidateQuizPaths(quizId: string, slug?: string) {
 
 export async function createQuiz(formData: FormData) {
   const { supabase, userId } = await requireAuthor()
+  const author = await getAuthorBillingProfile(supabase, userId)
+
+  if (!author) {
+    return { error: "Author profile not found." }
+  }
+
+  const quizCount = await getAuthorQuizCount(supabase, userId)
+  const access = getSubscriptionAccess(author, quizCount)
+
+  if (!access.canCreateQuiz) {
+    return {
+      error: "Free plan includes 1 quiz. Upgrade to Pro to create more.",
+    }
+  }
 
   const bookTitle = String(formData.get("book_title") ?? "").trim()
   const quizTitle = String(formData.get("quiz_title") ?? "").trim()
@@ -541,6 +560,19 @@ export async function deleteAnswer(answerId: string): Promise<ActionResult> {
 
 export async function publishQuiz(quizId: string): Promise<ActionResult> {
   const { supabase, draft } = await requireQuizOwner(quizId)
+  const author = await getAuthorBillingProfile(supabase, draft.quiz.author_id)
+
+  if (!author) {
+    return { error: "Author profile not found." }
+  }
+
+  const quizCount = await getAuthorQuizCount(supabase, draft.quiz.author_id)
+  const access = getSubscriptionAccess(author, quizCount)
+
+  if (!access.canPublish) {
+    return { error: "Upgrade to Pro to publish quizzes." }
+  }
+
   const errors = validateQuizForPublish(draft)
 
   if (errors.length > 0) {
