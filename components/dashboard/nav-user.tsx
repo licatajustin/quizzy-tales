@@ -21,7 +21,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import Link from "next/link"
-import { ChevronsUpDown, CreditCard, LogOut } from "lucide-react"
+import { ChevronsUpDown, CreditCard, LogOut, UserRound } from "lucide-react"
 
 import { signOut } from "@/app/actions/auth"
 
@@ -92,6 +92,12 @@ export function NavUser({ user }: NavUserProps) {
               <Link href="/dashboard/settings/billing">
                 <CreditCard />
                 Billing
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/dashboard/settings/account">
+                <UserRound />
+                Account
               </Link>
             </DropdownMenuItem>
             <form ref={signOutFormRef} action={signOut} className="hidden" />

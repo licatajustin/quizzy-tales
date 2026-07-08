@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import { toast } from "sonner"
 
 import { updateQuizDetails } from "@/app/actions/quizzes"
+import { CoverImageControls } from "@/components/dashboard/quiz-editor/cover-image-controls"
 import {
   Card,
   CardContent,
@@ -29,10 +30,13 @@ export function DetailsTab({ quiz }: DetailsTabProps) {
   const [bookTitle, setBookTitle] = useState(quiz.book_title)
   const [quizTitle, setQuizTitle] = useState(quiz.quiz_title)
   const [slug, setSlug] = useState(quiz.slug)
-  const [coverImageUrl, setCoverImageUrl] = useState(quiz.cover_image_url ?? "")
+  const [coverImageUrl, setCoverImageUrl] = useState(quiz.cover_image_url)
+  const coverImageUrlRef = useRef(coverImageUrl)
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle")
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const isFirstRun = useRef(true)
+
+  coverImageUrlRef.current = coverImageUrl
 
   useEffect(() => {
     if (isFirstRun.current) {
@@ -50,7 +54,7 @@ export function DetailsTab({ quiz }: DetailsTabProps) {
         book_title: bookTitle,
         quiz_title: quizTitle,
         slug: generateSlug(slug),
-        cover_image_url: coverImageUrl || null,
+        cover_image_url: coverImageUrlRef.current,
       })
 
       if (result.error) {
@@ -68,7 +72,7 @@ export function DetailsTab({ quiz }: DetailsTabProps) {
         clearTimeout(timerRef.current)
       }
     }
-  }, [bookTitle, quizTitle, slug, coverImageUrl, quiz.id])
+  }, [bookTitle, quizTitle, slug, quiz.id])
 
   return (
     <Card className="bg-card">
@@ -125,19 +129,11 @@ export function DetailsTab({ quiz }: DetailsTabProps) {
               numbers, and hyphens only.
             </FieldDescription>
           </Field>
-          <Field>
-            <FieldLabel htmlFor="cover_image_url">Cover image URL</FieldLabel>
-            <Input
-              id="cover_image_url"
-              value={coverImageUrl}
-              onChange={(event) => setCoverImageUrl(event.target.value)}
-              placeholder="https://..."
-            />
-            <FieldDescription>
-              Optional. Paste a direct image link to show your book cover on the
-              quiz page.
-            </FieldDescription>
-          </Field>
+          <CoverImageControls
+            quizId={quiz.id}
+            imageUrl={coverImageUrl}
+            onImageChange={setCoverImageUrl}
+          />
         </FieldGroup>
       </CardContent>
     </Card>

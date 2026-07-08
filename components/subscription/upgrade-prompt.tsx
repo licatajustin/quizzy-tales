@@ -9,6 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { LIVE_QUIZ_PRICE_LABEL } from "@/lib/products"
 
 type UpgradePromptProps = {
   title: string
@@ -27,7 +28,9 @@ export function UpgradePrompt({ title, description }: UpgradePromptProps) {
       </CardHeader>
       <CardContent>
         <Button asChild className="rounded-full">
-          <Link href="/dashboard/settings/billing">Upgrade to Pro</Link>
+          <Link href="/dashboard/settings/billing">
+            Start plan · {LIVE_QUIZ_PRICE_LABEL}/mo
+          </Link>
         </Button>
       </CardContent>
     </Card>

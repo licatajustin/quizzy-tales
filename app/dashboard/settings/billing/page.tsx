@@ -1,6 +1,7 @@
 import { CreditCard } from "lucide-react"
 
 import { createCustomerPortalSession } from "@/app/actions/stripe"
+import { BillingCheckoutReturn } from "@/components/checkout/checkout-return-handler"
 import { PlanComparison } from "@/components/settings/plan-comparison"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -11,18 +12,20 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { getCurrentPlanId, getPlanLabel, refreshAuthorSubscriptionFromStripe } from "@/lib/billing"
-import { getBillingProducts } from "@/lib/products"
-import { getStripePublishableKey } from "@/lib/stripe/env"
+import {
+  getCurrentPlanId,
+  getPlanLabel,
+  refreshAuthorSubscriptionFromStripe,
+} from "@/lib/billing"
+import { LIVE_QUIZ_PRICE_LABEL } from "@/lib/products"
 import {
   formatSubscriptionDate,
-  getSubscriptionAccess,
   isPaidSubscriptionStatus,
   isSubscriptionCanceling,
 } from "@/lib/subscription"
 import {
   getAuthorBillingProfile,
-  getAuthorQuizCount,
+  getSubscriptionAccessForUser,
 } from "@/lib/subscription-server"
 import { createClient } from "@/lib/supabase/server"
 
@@ -43,17 +46,19 @@ export default async function BillingPage() {
   }
 
   const author = await refreshAuthorSubscriptionFromStripe(user.id, billingProfile)
-  const quizCount = await getAuthorQuizCount(supabase, user.id)
+  const access = await getSubscriptionAccessForUser(supabase, user.id)
 
-  if (!author) {
+  if (!author || !access) {
     return null
   }
 
-  const access = getSubscriptionAccess(author, quizCount)
   const isPaid = isPaidSubscriptionStatus(author.subscription_status)
   const isCanceling = isSubscriptionCanceling(author)
   const currentPlanId = await getCurrentPlanId(author)
-  const currentPlanLabel = getPlanLabel(currentPlanId)
+  const currentPlanLabel = getPlanLabel(
+    currentPlanId,
+    author.subscription_quantity
+  )
   const renewalDate = formatSubscriptionDate(author.subscription_end_date)
 
   async function openPortal() {
@@ -67,15 +72,16 @@ export default async function BillingPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-8">
+      <BillingCheckoutReturn />
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-3xl font-semibold tracking-tight">Billing</h1>
           <p className="mt-2 text-muted-foreground">
             {isPaid
               ? isCanceling
-                ? "Your subscription is cancelled but Pro features stay available until the end of your billing period."
-                : "Manage your Pro subscription or switch plans."
-              : "Upgrade to publish quizzes, unlock AI tools, and create without limits."}
+                ? "Your subscription is cancelled but live quizzes stay up until the end of your billing period."
+                : "Manage your author plan, live quiz slots, and payment details."
+              : `${LIVE_QUIZ_PRICE_LABEL}/month includes 1 live quiz slot and full AI access. Subscribe anytime.`}
           </p>
         </div>
         {isPaid ? (
@@ -100,23 +106,25 @@ export default async function BillingPage() {
           <div className="space-y-1">
             <CardTitle className="flex items-center gap-2">
               <CreditCard className="size-4" />
-              You&apos;re on {currentPlanLabel}
+              {currentPlanLabel}
             </CardTitle>
             <CardDescription>
               {isPaid
                 ? isCanceling && renewalDate
-                  ? `Cancelled — Pro access continues until ${renewalDate}.`
+                  ? `Cancelled — live access continues until ${renewalDate}.`
                   : renewalDate
                     ? `Your subscription renews on ${renewalDate}.`
-                    : "Your Pro subscription is active."
-                : `You have ${quizCount} of ${access.maxQuizzes} quiz${access.maxQuizzes === 1 ? "" : "zes"} on the free plan.`}
+                    : "Your live quiz subscription is active."
+                : access.hasActivePlan
+                  ? `${access.publishedQuizCount} live · ${access.availableLiveSlots} slot${access.availableLiveSlots === 1 ? "" : "s"} available`
+                  : "Unlimited drafts · subscribe to unlock AI"}
             </CardDescription>
           </div>
           <Badge
             variant={isCanceling ? "outline" : isPaid ? "default" : "secondary"}
             className="shrink-0"
           >
-            {isCanceling ? "Cancelled" : isPaid ? "Pro" : "Free"}
+            {isCanceling ? "Cancelled" : isPaid ? "Active" : "Free"}
           </Badge>
         </CardHeader>
         {isPaid ? (
@@ -133,14 +141,7 @@ export default async function BillingPage() {
         ) : null}
       </Card>
 
-      <PlanComparison
-        products={getBillingProducts()}
-        currentPlanId={currentPlanId}
-        access={access}
-        renewalDate={renewalDate}
-        publishableKey={getStripePublishableKey()}
-      />
-
+      <PlanComparison access={access} renewalDate={renewalDate} />
     </div>
   )
 }

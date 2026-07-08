@@ -8,8 +8,8 @@ export function PricingSection() {
     <MarketingSection id="pricing" className="py-20 md:py-28">
       <SectionHeader
         eyebrow="Pricing"
-        title="Start free. Go pro when you're ready to publish."
-        description="Build your first quiz on the house. Unlock AI, publishing, and unlimited quizzes when you're ready to share with readers."
+        title="Start free. Subscribe when you're ready."
+        description="Unlimited drafts and an AI trial. $15/month unlocks full AI and includes 1 live quiz — publish when your quiz is ready."
         align="center"
         className="mb-12"
       />
@@ -19,10 +19,6 @@ export function PricingSection() {
           <PricingPlanCard key={plan.name} plan={plan} />
         ))}
       </div>
-
-      <p className="mt-6 text-center text-sm text-muted-foreground">
-        Save with annual billing at $192/year — two months free.
-      </p>
     </MarketingSection>
   )
 }

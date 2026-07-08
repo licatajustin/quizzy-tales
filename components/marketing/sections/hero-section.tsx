@@ -54,7 +54,7 @@ export function HeroSection() {
             </div>
 
             <p className="text-sm text-muted-foreground">
-              Free to start · Pro from $20/mo · No credit card to explore
+              Create unlimited drafts free · Live quizzes from $15/mo
             </p>
           </div>
 

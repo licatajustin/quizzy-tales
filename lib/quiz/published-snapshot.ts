@@ -81,6 +81,30 @@ export function validateQuizForPublish(draft: QuizDraft) {
   return errors
 }
 
+export function buildCoverImageQuizUpdate(
+  quiz: {
+    status: QuizRow["status"]
+    published_snapshot: PublishedQuizSnapshot | null
+  },
+  coverImageUrl: string | null
+) {
+  const update: {
+    cover_image_url: string | null
+    published_snapshot?: PublishedQuizSnapshot
+  } = {
+    cover_image_url: coverImageUrl,
+  }
+
+  if (quiz.status === "published" && quiz.published_snapshot) {
+    update.published_snapshot = {
+      ...quiz.published_snapshot,
+      cover_image_url: coverImageUrl,
+    }
+  }
+
+  return update
+}
+
 export function hasUnpublishedChanges(
   quiz: QuizRow,
   draftSnapshot: PublishedQuizSnapshot

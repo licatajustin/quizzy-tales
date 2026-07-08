@@ -19,7 +19,7 @@ export default async function DashboardPage() {
   const [{ data: author }, { data: quizzes }] = await Promise.all([
     supabase
       .from("authors")
-      .select("display_name, onboarding_completed")
+      .select("display_name")
       .eq("id", user.id)
       .maybeSingle(),
     supabase
@@ -59,18 +59,6 @@ export default async function DashboardPage() {
           value={(quizzes?.length ?? 0) - publishedCount}
         />
       </div>
-
-      {!author?.onboarding_completed ? (
-        <div className="rounded-xl border border-border/60 bg-card p-4 text-sm">
-          <p className="font-medium">Finish onboarding when you&apos;re ready</p>
-          <p className="mt-1 text-muted-foreground">
-            You can skip it and create quizzes manually in the meantime.
-          </p>
-          <Button asChild variant="outline" size="sm" className="mt-3 rounded-full">
-            <Link href="/dashboard/onboarding">Open onboarding</Link>
-          </Button>
-        </div>
-      ) : null}
 
       <section className="space-y-4">
         <div className="flex items-center justify-between gap-4">

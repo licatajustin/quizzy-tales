@@ -48,20 +48,5 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(dashboardUrl)
   }
 
-  if (user && isDashboardRoute && !pathname.startsWith("/dashboard/onboarding")) {
-    const { data: author } = await supabase
-      .from("authors")
-      .select("onboarding_completed")
-      .eq("id", user.id)
-      .maybeSingle()
-
-    if (author && !author.onboarding_completed) {
-      const onboardingUrl = request.nextUrl.clone()
-      onboardingUrl.pathname = "/dashboard/onboarding"
-      onboardingUrl.search = ""
-      return NextResponse.redirect(onboardingUrl)
-    }
-  }
-
   return response
 }

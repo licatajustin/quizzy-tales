@@ -18,9 +18,9 @@ const SEGMENT_LABELS: Record<string, string> = {
   new: "New quiz",
   preview: "Preview",
   analytics: "Analytics",
-  onboarding: "Onboarding",
   settings: "Settings",
   billing: "Billing",
+  account: "Account",
 }
 
 function formatSegmentLabel(segment: string) {

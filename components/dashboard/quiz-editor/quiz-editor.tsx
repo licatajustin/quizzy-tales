@@ -2,38 +2,83 @@
 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { Suspense, useTransition } from "react"
 import { ExternalLink, Eye, Rocket, Undo2 } from "lucide-react"
 import { toast } from "sonner"
 
 import { publishQuiz, unpublishQuiz } from "@/app/actions/quizzes"
+import {
+  startPublishCheckout,
+  startSubscriptionCheckout,
+} from "@/app/actions/stripe"
+import { CheckoutReturnHandler } from "@/components/checkout/checkout-return-handler"
+import { showAiLimitToast } from "@/lib/ai/show-ai-limit-toast"
+import { AiAssistTab } from "@/components/dashboard/quiz-editor/ai-assist-tab"
 import { DetailsTab } from "@/components/dashboard/quiz-editor/details-tab"
 import { OutcomesTab } from "@/components/dashboard/quiz-editor/outcomes-tab"
 import { QuestionsTab } from "@/components/dashboard/quiz-editor/questions-tab"
-import { UpgradePrompt } from "@/components/subscription/upgrade-prompt"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { LIVE_QUIZ_PRICE_LABEL } from "@/lib/products"
 import { validateQuizForPublish } from "@/lib/quiz/published-snapshot"
 import type { QuizDraft } from "@/lib/quiz/types"
+import type { SubscriptionAccess } from "@/lib/subscription"
+import { redirectToStripeCheckout } from "@/lib/stripe/redirect-checkout"
 
 type QuizEditorProps = {
   draft: QuizDraft
-  canPublish: boolean
+  access: SubscriptionAccess
+  hasLiveChanges: boolean
 }
 
-export function QuizEditor({ draft, canPublish }: QuizEditorProps) {
+export function QuizEditor({
+  draft,
+  access,
+  hasLiveChanges,
+}: QuizEditorProps) {
   const router = useRouter()
+  const [isCheckoutPending, startCheckout] = useTransition()
   const validationErrors = validateQuizForPublish(draft)
-  const canPublishQuiz = canPublish && validationErrors.length === 0
+  const canPublishQuiz = validationErrors.length === 0
+  const quizPath = `/dashboard/quizzes/${draft.quiz.id}`
+
+  function handleAiUpgrade() {
+    if (!access.isPaid) {
+      startCheckout(() => {
+        void redirectToStripeCheckout(() =>
+          startSubscriptionCheckout(quizPath)
+        )
+      })
+      return
+    }
+
+    showAiLimitToast({
+      description:
+        "You've used this month's AI credits. Add another live quiz slot in Billing for more.",
+    })
+  }
 
   async function handlePublish() {
     const result = await publishQuiz(draft.quiz.id)
+
+    if (result.requiresBilling) {
+      startCheckout(() => {
+        void redirectToStripeCheckout(() => startPublishCheckout(draft.quiz.id))
+      })
+      return
+    }
+
     if (result.error) {
       toast.error(result.error)
       return
     }
 
-    toast.success("Quiz published")
+    toast.success(
+      draft.quiz.status === "published"
+        ? "Live quiz updated"
+        : "Quiz is now live"
+    )
     router.refresh()
   }
 
@@ -50,6 +95,10 @@ export function QuizEditor({ draft, canPublish }: QuizEditorProps) {
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
+      <Suspense fallback={null}>
+        <CheckoutReturnHandler successMessage="Payment complete. Your quiz should be live shortly." />
+      </Suspense>
+
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="space-y-2">
           <div className="flex flex-wrap items-center gap-2">
@@ -61,14 +110,20 @@ export function QuizEditor({ draft, canPublish }: QuizEditorProps) {
             </Badge>
           </div>
           <p className="text-sm text-muted-foreground">{draft.quiz.book_title}</p>
-          {draft.quiz.status === "draft" && !canPublish ? (
-            <UpgradePrompt
-              title="Publishing is a Pro feature"
-              description="Upgrade to share your quiz at a public link and start collecting reader analytics."
-            />
-          ) : draft.quiz.status === "draft" && !canPublishQuiz ? (
+          {access.isInGracePeriod && access.graceEndsAt ? (
+            <p className="text-xs text-amber-600 dark:text-amber-400">
+              Billing grace period ends{" "}
+              {new Date(access.graceEndsAt).toLocaleDateString()}. Update payment
+              to keep quizzes live.
+            </p>
+          ) : null}
+          {draft.quiz.status === "draft" && !canPublishQuiz ? (
             <p className="text-xs text-muted-foreground">
               Before publishing: {validationErrors.join(" ")}
+            </p>
+          ) : draft.quiz.status === "draft" ? (
+            <p className="text-xs text-muted-foreground">
+              Going live uses one slot on your author plan.
             </p>
           ) : null}
         </div>
@@ -89,6 +144,17 @@ export function QuizEditor({ draft, canPublish }: QuizEditorProps) {
                   Live quiz
                 </Link>
               </Button>
+              {hasLiveChanges ? (
+                <Button
+                  type="button"
+                  className="rounded-full"
+                  disabled={!canPublishQuiz || isCheckoutPending}
+                  onClick={handlePublish}
+                >
+                  <Rocket data-icon="inline-start" />
+                  Update live quiz
+                </Button>
+              ) : null}
               <Button
                 type="button"
                 variant="outline"
@@ -103,11 +169,11 @@ export function QuizEditor({ draft, canPublish }: QuizEditorProps) {
             <Button
               type="button"
               className="rounded-full"
-              disabled={!canPublishQuiz}
+              disabled={!canPublishQuiz || isCheckoutPending}
               onClick={handlePublish}
             >
               <Rocket data-icon="inline-start" />
-              Publish
+              Go live · {LIVE_QUIZ_PRICE_LABEL}/mo
             </Button>
           )}
         </div>
@@ -122,13 +188,19 @@ export function QuizEditor({ draft, canPublish }: QuizEditorProps) {
           <TabsTrigger value="questions">
             Questions ({draft.questions.length})
           </TabsTrigger>
+          <TabsTrigger value="ai">AI Assist</TabsTrigger>
         </TabsList>
 
         <TabsContent value="details" className="mt-6">
           <DetailsTab quiz={draft.quiz} />
         </TabsContent>
         <TabsContent value="outcomes" className="mt-6">
-          <OutcomesTab quizId={draft.quiz.id} outcomes={draft.outcomes} />
+          <OutcomesTab
+            quizId={draft.quiz.id}
+            outcomes={draft.outcomes}
+            canUseAI={access.canUseAI}
+            onUpgrade={handleAiUpgrade}
+          />
         </TabsContent>
         <TabsContent value="questions" className="mt-6">
           <QuestionsTab
@@ -136,6 +208,13 @@ export function QuizEditor({ draft, canPublish }: QuizEditorProps) {
             questions={draft.questions}
             answers={draft.answers}
             outcomes={draft.outcomes}
+          />
+        </TabsContent>
+        <TabsContent value="ai" className="mt-6">
+          <AiAssistTab
+            quizId={draft.quiz.id}
+            canUseAI={access.canUseAI}
+            onUpgrade={handleAiUpgrade}
           />
         </TabsContent>
       </Tabs>
