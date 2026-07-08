@@ -3,6 +3,7 @@ import type Stripe from "stripe"
 
 import {
   clearAuthorSubscription,
+  publishQuizAfterCheckout,
   syncAuthorSubscription,
 } from "@/app/actions/stripe"
 import {
@@ -12,18 +13,14 @@ import {
 } from "@/lib/stripe/sync-subscription"
 import { getStripe } from "@/lib/stripe/client"
 import { getStripeWebhookSecret } from "@/lib/stripe/env"
+import { graceEndsAtFromNow } from "@/lib/subscription"
 import { createAdminClient } from "@/lib/supabase/admin"
 
 export const runtime = "nodejs"
 
 async function updateAuthorByCustomerId(
   customerId: string,
-  fields: {
-    subscription_id?: string | null
-    subscription_status?: string
-    subscription_end_date?: string | null
-    subscription_cancel_at_period_end?: boolean
-  }
+  fields: Record<string, unknown>
 ) {
   const admin = createAdminClient()
 
@@ -35,6 +32,8 @@ async function updateAuthorByCustomerId(
 
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const authorId = session.metadata?.author_id
+  const quizId = session.metadata?.quiz_id
+  const intent = session.metadata?.intent
   const customerId =
     typeof session.customer === "string" ? session.customer : session.customer?.id
   const subscriptionId =
@@ -55,6 +54,10 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     .from("authors")
     .update({ stripe_customer_id: customerId })
     .eq("id", authorId)
+
+  if (intent === "publish" && quizId) {
+    await publishQuizAfterCheckout(authorId, quizId)
+  }
 }
 
 async function handleSubscriptionChange(subscription: Stripe.Subscription) {
@@ -100,6 +103,8 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
     subscription_status: "inactive",
     subscription_end_date: null,
     subscription_cancel_at_period_end: false,
+    subscription_quantity: 0,
+    subscription_grace_ends_at: graceEndsAtFromNow(),
   })
 }
 

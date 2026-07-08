@@ -89,26 +89,25 @@ export type PricingPlan = {
 
 export const pricingPlans: PricingPlan[] = [
   {
-    name: "Free",
-    description: "For exploring the editor",
+    name: "Drafts",
+    description: "Build unlimited quizzes for free",
     price: "$0",
     interval: "/forever",
-    perks: ["1 quiz", "Draft editing", "Preview mode"],
-    cta: "Start for free",
+    perks: ["Unlimited draft quizzes", "AI trial while building", "Preview mode"],
+    cta: "Start creating",
   },
   {
-    name: "Pro",
-    description: "For authors ready to launch",
-    price: "$20",
+    name: "Author plan",
+    description: "$15/mo includes 1 live quiz + full AI",
+    price: "$15",
     interval: "/month",
     perks: [
-      "Unlimited quizzes",
-      "Publish to public URLs",
-      "AI quiz generation & revision",
-      "AI outcome portraits",
+      "1 live quiz slot included",
+      "Full AI builder & revision",
       "Engagement analytics",
+      "Extra live quizzes +$15/mo each",
     ],
-    cta: "Start with Pro",
+    cta: "Start your plan",
     highlighted: true,
     badge: "Most popular",
   },
@@ -128,12 +127,12 @@ export const faqs = [
   {
     question: "How does AI generation work?",
     answer:
-      "Paste your book synopsis and pick a tone. QuizzyTales drafts character outcomes, questions, and weighted answers you can refine in the editor. AI features require a paid plan.",
+      "Paste your book synopsis and pick a tone. QuizzyTales drafts character outcomes, questions, and weighted answers you can refine in the editor. A free AI trial helps you build before going live.",
   },
   {
-    question: "What does the free plan include?",
+    question: "How does pricing work?",
     answer:
-      "You can create and edit one quiz on the free tier. Publishing, AI generation, and unlimited quizzes unlock with QuizzyTales Pro at $20/month.",
+      "Drafts are free with a small AI trial. The author plan is $15/month and includes 1 live quiz slot plus full AI access — subscribe anytime, publish when ready. Each additional simultaneous live quiz is +$15/month.",
   },
 ] as const
 

@@ -4,36 +4,96 @@ import type { QuizAnalyticsSummary } from "@/lib/analytics/types"
 import type { PublishedQuizSnapshot } from "@/lib/quiz/types"
 
 const DAYS = 30
+const EVENT_PAGE_SIZE = 1000
 
-function formatDayLabel(date: string) {
-  return new Date(`${date}T12:00:00`).toLocaleDateString("en-US", {
+function toDateKey(date: Date) {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, "0")
+  const day = String(date.getDate()).padStart(2, "0")
+  return `${year}-${month}-${day}`
+}
+
+function toDateKeyFromTimestamp(timestamp: string) {
+  return toDateKey(new Date(timestamp))
+}
+
+function formatDayLabel(dateKey: string) {
+  const [year, month, day] = dateKey.split("-").map(Number)
+  return new Date(year, month - 1, day).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
   })
 }
 
+function startOfDay(date: Date) {
+  const next = new Date(date)
+  next.setHours(0, 0, 0, 0)
+  return next
+}
+
 function buildDailyActivity(
-  starts: { created_at: string }[],
-  completions: { created_at: string }[]
+  events: { event_type: string; created_at: string }[]
 ) {
-  const today = new Date()
+  const today = startOfDay(new Date())
   const days: QuizAnalyticsSummary["dailyActivity"] = []
 
   for (let index = DAYS - 1; index >= 0; index -= 1) {
     const day = new Date(today)
     day.setDate(today.getDate() - index)
-    const date = day.toISOString().slice(0, 10)
+    const date = toDateKey(day)
+    const dayEvents = events.filter(
+      (row) => toDateKeyFromTimestamp(row.created_at) === date
+    )
 
     days.push({
       date,
       label: formatDayLabel(date),
-      starts: starts.filter((row) => row.created_at.startsWith(date)).length,
-      completions: completions.filter((row) => row.created_at.startsWith(date))
+      views: dayEvents.filter((row) => row.event_type === "view").length,
+      starts: dayEvents.filter((row) => row.event_type === "start").length,
+      completions: dayEvents.filter((row) => row.event_type === "complete")
         .length,
     })
   }
 
   return days
+}
+
+async function fetchQuizEvents(
+  supabase: SupabaseClient,
+  quizIds: string[],
+  since: Date
+) {
+  const rows: { event_type: string; outcome_id: string | null; created_at: string }[] =
+    []
+  let offset = 0
+
+  while (true) {
+    const { data, error } = await supabase
+      .from("quiz_events")
+      .select("event_type, outcome_id, created_at")
+      .in("quiz_id", quizIds)
+      .gte("created_at", since.toISOString())
+      .order("created_at", { ascending: true })
+      .range(offset, offset + EVENT_PAGE_SIZE - 1)
+
+    if (error) {
+      throw error
+    }
+
+    if (!data?.length) {
+      break
+    }
+
+    rows.push(...data)
+
+    if (data.length < EVENT_PAGE_SIZE) {
+      break
+    }
+
+    offset += EVENT_PAGE_SIZE
+  }
+
+  return rows
 }
 
 export async function getAuthorQuizIds(
@@ -62,21 +122,14 @@ export async function getQuizAnalyticsSummary(
       shares: 0,
       completionRate: 0,
       outcomeCounts: [],
-      dailyActivity: buildDailyActivity([], []),
+      dailyActivity: buildDailyActivity([]),
     }
   }
 
-  const since = new Date()
+  const since = startOfDay(new Date())
   since.setDate(since.getDate() - (DAYS - 1))
-  since.setHours(0, 0, 0, 0)
 
-  const { data: events } = await supabase
-    .from("quiz_events")
-    .select("event_type, outcome_id, created_at")
-    .in("quiz_id", quizIds)
-    .gte("created_at", since.toISOString())
-
-  const rows = events ?? []
+  const rows = await fetchQuizEvents(supabase, quizIds, since)
   const views = rows.filter((row) => row.event_type === "view").length
   const starts = rows.filter((row) => row.event_type === "start")
   const completions = rows.filter((row) => row.event_type === "complete")
@@ -106,7 +159,7 @@ export async function getQuizAnalyticsSummary(
         ? Math.round((completions.length / starts.length) * 100)
         : 0,
     outcomeCounts,
-    dailyActivity: buildDailyActivity(starts, completions),
+    dailyActivity: buildDailyActivity(rows),
   }
 }
 

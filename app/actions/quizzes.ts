@@ -3,22 +3,28 @@
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 
-import { getQuizDraft } from "@/lib/quiz/queries"
 import {
-  buildPublishedSnapshot,
-  validateQuizForPublish,
-} from "@/lib/quiz/published-snapshot"
+  decrementSubscriptionOnUnpublish,
+  incrementSubscriptionForPublish,
+} from "@/app/actions/stripe"
+import { getQuizDraft } from "@/lib/quiz/queries"
+import { executePublishQuiz } from "@/lib/quiz/publish-billing"
+import { validateQuizForPublish } from "@/lib/quiz/published-snapshot"
 import { generateSlug } from "@/lib/quiz/slug"
 import {
   getAuthorBillingProfile,
-  getAuthorQuizCount,
+  getPublishedQuizCount,
 } from "@/lib/subscription-server"
-import { getSubscriptionAccess } from "@/lib/subscription"
+import {
+  isInGracePeriod,
+  isPaidSubscriptionStatus,
+} from "@/lib/subscription"
 import { createClient } from "@/lib/supabase/server"
 
 export type ActionResult = {
   error?: string
   success?: boolean
+  requiresBilling?: boolean
 }
 
 async function requireAuthor() {
@@ -92,15 +98,6 @@ export async function createQuiz(formData: FormData) {
 
   if (!author) {
     return { error: "Author profile not found." }
-  }
-
-  const quizCount = await getAuthorQuizCount(supabase, userId)
-  const access = getSubscriptionAccess(author, quizCount)
-
-  if (!access.canCreateQuiz) {
-    return {
-      error: "Free plan includes 1 quiz. Upgrade to Pro to create more.",
-    }
   }
 
   const bookTitle = String(formData.get("book_title") ?? "").trim()
@@ -566,39 +563,66 @@ export async function publishQuiz(quizId: string): Promise<ActionResult> {
     return { error: "Author profile not found." }
   }
 
-  const quizCount = await getAuthorQuizCount(supabase, draft.quiz.author_id)
-  const access = getSubscriptionAccess(author, quizCount)
-
-  if (!access.canPublish) {
-    return { error: "Upgrade to Pro to publish quizzes." }
-  }
-
   const errors = validateQuizForPublish(draft)
 
   if (errors.length > 0) {
     return { error: errors.join(" ") }
   }
 
-  const snapshot = buildPublishedSnapshot(draft)
-
-  const { error } = await supabase
-    .from("quizzes")
-    .update({
-      status: "published",
-      published_snapshot: snapshot,
-    })
-    .eq("id", quizId)
-
-  if (error) {
-    return { error: error.message }
+  if (draft.quiz.status === "published") {
+    try {
+      await executePublishQuiz(supabase, quizId)
+      return { success: true }
+    } catch (error) {
+      return {
+        error: error instanceof Error ? error.message : "Could not publish quiz.",
+      }
+    }
   }
 
-  revalidateQuizPaths(quizId, draft.quiz.slug)
-  return { success: true }
+  const publishedCount = await getPublishedQuizCount(
+    supabase,
+    draft.quiz.author_id
+  )
+  const isPaid = isPaidSubscriptionStatus(author.subscription_status)
+  const paidSlots = isPaid ? author.subscription_quantity : 0
+  const requiredSlots = publishedCount + 1
+
+  if (
+    !isPaid &&
+    isInGracePeriod(author) &&
+    publishedCount > 0
+  ) {
+    return {
+      error:
+        "Payment is required before publishing another quiz. Update billing to continue.",
+    }
+  }
+
+  if (!isPaid) {
+    return { requiresBilling: true }
+  }
+
+  if (paidSlots < requiredSlots) {
+    const increment = await incrementSubscriptionForPublish(quizId)
+    if (increment.error) {
+      return { error: increment.error }
+    }
+  }
+
+  try {
+    await executePublishQuiz(supabase, quizId)
+    return { success: true }
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "Could not publish quiz.",
+    }
+  }
 }
 
 export async function unpublishQuiz(quizId: string): Promise<ActionResult> {
   const { supabase, draft } = await requireQuizOwner(quizId)
+  const author = await getAuthorBillingProfile(supabase, draft.quiz.author_id)
 
   const { error } = await supabase
     .from("quizzes")
@@ -607,6 +631,10 @@ export async function unpublishQuiz(quizId: string): Promise<ActionResult> {
 
   if (error) {
     return { error: error.message }
+  }
+
+  if (author) {
+    await decrementSubscriptionOnUnpublish(draft.quiz.author_id, author)
   }
 
   revalidateQuizPaths(quizId, draft.quiz.slug)

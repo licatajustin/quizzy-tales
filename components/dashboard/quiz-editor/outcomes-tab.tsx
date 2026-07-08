@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Plus, Trash2 } from "lucide-react"
 import { toast } from "sonner"
@@ -9,6 +10,7 @@ import {
   deleteOutcome,
   updateOutcome,
 } from "@/app/actions/quizzes"
+import { OutcomePortraitControls } from "@/components/dashboard/quiz-editor/outcome-portrait-controls"
 import { Button } from "@/components/ui/button"
 import {
   Field,
@@ -23,9 +25,16 @@ import type { OutcomeRow } from "@/lib/quiz/types"
 type OutcomesTabProps = {
   quizId: string
   outcomes: OutcomeRow[]
+  canUseAI: boolean
+  onUpgrade?: () => void
 }
 
-export function OutcomesTab({ quizId, outcomes }: OutcomesTabProps) {
+export function OutcomesTab({
+  quizId,
+  outcomes,
+  canUseAI,
+  onUpgrade,
+}: OutcomesTabProps) {
   const router = useRouter()
 
   async function handleCreate() {
@@ -92,7 +101,10 @@ export function OutcomesTab({ quizId, outcomes }: OutcomesTabProps) {
         {outcomes.map((outcome) => (
           <OutcomeCard
             key={outcome.id}
+            quizId={quizId}
             outcome={outcome}
+            canUseAI={canUseAI}
+            onUpgrade={onUpgrade}
             onUpdate={handleUpdate}
             onDelete={handleDelete}
           />
@@ -103,14 +115,22 @@ export function OutcomesTab({ quizId, outcomes }: OutcomesTabProps) {
 }
 
 function OutcomeCard({
+  quizId,
   outcome,
+  canUseAI,
+  onUpgrade,
   onUpdate,
   onDelete,
 }: {
+  quizId: string
   outcome: OutcomeRow
+  canUseAI: boolean
+  onUpgrade?: () => void
   onUpdate: (outcome: OutcomeRow) => Promise<void>
   onDelete: (outcomeId: string, name: string) => Promise<void>
 }) {
+  const [localOutcome, setLocalOutcome] = useState(outcome)
+
   return (
     <div className="rounded-xl border border-border/60 bg-card p-4">
       <div className="mb-4 flex items-start justify-between gap-3">
@@ -120,7 +140,7 @@ function OutcomeCard({
           variant="ghost"
           size="icon-sm"
           aria-label="Delete outcome"
-          onClick={() => onDelete(outcome.id, outcome.name)}
+          onClick={() => onDelete(localOutcome.id, localOutcome.name)}
         >
           <Trash2 className="size-4" />
         </Button>
@@ -134,11 +154,13 @@ function OutcomeCard({
             Brave&rdquo;.
           </FieldDescription>
           <Input
-            defaultValue={outcome.name}
+            defaultValue={localOutcome.name}
             onBlur={(event) => {
               const name = event.target.value
-              if (name === outcome.name) return
-              onUpdate({ ...outcome, name })
+              if (name === localOutcome.name) return
+              const next = { ...localOutcome, name }
+              setLocalOutcome(next)
+              onUpdate(next)
             }}
           />
         </Field>
@@ -148,32 +170,33 @@ function OutcomeCard({
             Shown on the result screen when a reader gets this character.
           </FieldDescription>
           <Textarea
-            defaultValue={outcome.description}
+            defaultValue={localOutcome.description}
             rows={3}
             onBlur={(event) => {
               const description = event.target.value
-              if (description === outcome.description) return
-              onUpdate({ ...outcome, description })
-            }}
-          />
-        </Field>
-        <Field>
-          <FieldLabel>Portrait image URL</FieldLabel>
-          <FieldDescription>
-            Optional. A direct link to the character&apos;s portrait or
-            illustration.
-          </FieldDescription>
-          <Input
-            defaultValue={outcome.image_url ?? ""}
-            placeholder="https://..."
-            onBlur={(event) => {
-              const imageUrl = event.target.value.trim() || null
-              if (imageUrl === outcome.image_url) return
-              onUpdate({ ...outcome, image_url: imageUrl })
+              if (description === localOutcome.description) return
+              const next = { ...localOutcome, description }
+              setLocalOutcome(next)
+              onUpdate(next)
             }}
           />
         </Field>
       </FieldGroup>
+
+      <div className="mt-4">
+        <OutcomePortraitControls
+          quizId={quizId}
+          outcomeId={localOutcome.id}
+          imageUrl={localOutcome.image_url}
+          canUseAI={canUseAI}
+          onUpgrade={onUpgrade}
+          onImageChange={(imageUrl) => {
+            const next = { ...localOutcome, image_url: imageUrl }
+            setLocalOutcome(next)
+            onUpdate(next)
+          }}
+        />
+      </div>
     </div>
   )
 }

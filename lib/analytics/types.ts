@@ -62,5 +62,11 @@ export type QuizAnalyticsSummary = {
   shares: number
   completionRate: number
   outcomeCounts: { outcomeId: string; name: string; count: number }[]
-  dailyActivity: { date: string; label: string; starts: number; completions: number }[]
+  dailyActivity: {
+    date: string
+    label: string
+    views: number
+    starts: number
+    completions: number
+  }[]
 }

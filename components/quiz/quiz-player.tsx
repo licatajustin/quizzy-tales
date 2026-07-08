@@ -4,6 +4,8 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import Image from "next/image"
 import { RotateCcw } from "lucide-react"
 
+import { QuizShareButton } from "@/components/quiz/quiz-share-button"
+
 import {
   getAnonymousId,
   getTrackingContext,
@@ -261,6 +263,15 @@ export function QuizPlayer({
         ) : null}
 
         <div className="flex flex-wrap justify-center gap-3">
+          {trackingEnabled && quizId ? (
+            <QuizShareButton
+              quizId={quizId}
+              sessionId={sessionIdRef.current}
+              quizTitle={snapshot.quiz_title}
+              bookTitle={snapshot.book_title}
+              outcomeName={winningOutcome.name}
+            />
+          ) : null}
           <Button
             type="button"
             variant="outline"
