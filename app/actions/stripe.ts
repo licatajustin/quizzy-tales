@@ -89,6 +89,7 @@ export async function startSubscriptionCheckout(
     mode: "subscription",
     customer: customerId,
     line_items: [buildLiveQuizLineItem(1)],
+    allow_promotion_codes: true,
     success_url: `${siteUrl}${returnPath}?billing=success&session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${siteUrl}${returnPath}`,
     metadata: {
@@ -139,6 +140,7 @@ export async function startPublishCheckout(
     mode: "subscription",
     customer: customerId,
     line_items: [buildLiveQuizLineItem(1)],
+    allow_promotion_codes: true,
     success_url: `${siteUrl}${quizPath}?billing=success&session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${siteUrl}${quizPath}`,
     metadata: {
