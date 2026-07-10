@@ -3,18 +3,15 @@ import { Plus } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { QuizList } from "@/components/dashboard/quiz-list"
+import { getAuthorDisplayName } from "@/lib/auth/author"
 import { getDashboardSession } from "@/lib/auth/dashboard-session"
 import { QUIZ_LIST_SELECT } from "@/lib/quiz/types"
 
 export default async function DashboardPage() {
   const { supabase, user } = await getDashboardSession()
 
-  const [{ data: author }, { data: quizzes }] = await Promise.all([
-    supabase
-      .from("authors")
-      .select("display_name")
-      .eq("id", user.id)
-      .maybeSingle(),
+  const [displayName, { data: quizzes }] = await Promise.all([
+    getAuthorDisplayName(supabase, user.id),
     supabase
       .from("quizzes")
       .select(QUIZ_LIST_SELECT)
@@ -30,7 +27,7 @@ export default async function DashboardPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-3xl font-semibold tracking-tight">
-            Welcome{author?.display_name ? `, ${author.display_name}` : ""}
+            Welcome{displayName ? `, ${displayName}` : ""}
           </h1>
           <p className="mt-2 text-muted-foreground">
             Build book-themed personality quizzes your readers will share.

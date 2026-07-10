@@ -1,55 +1,35 @@
+import { Suspense } from "react"
+
 import { AnalyticsDashboard } from "@/components/analytics/analytics-dashboard"
+import { AnalyticsMetrics } from "@/components/analytics/analytics-metrics"
+import { AnalyticsMetricsSkeleton } from "@/components/analytics/analytics-metrics-skeleton"
 import { getDashboardSession } from "@/lib/auth/dashboard-session"
-import {
-  getAuthorQuizIds,
-  getQuizAnalyticsSummary,
-  outcomeNamesForQuiz,
-  outcomeNamesFromSnapshots,
-} from "@/lib/analytics/queries"
-import type { PublishedQuizSnapshot } from "@/lib/quiz/types"
+import { getAuthorQuizList } from "@/lib/analytics/queries"
 
 type AnalyticsPageProps = {
   searchParams: Promise<{ quiz?: string }>
 }
 
 export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps) {
-  const { quiz: selectedQuizId } = await searchParams
-  const { supabase, user } = await getDashboardSession()
+  const [{ quiz: selectedQuizId }, { supabase, user }] = await Promise.all([
+    searchParams,
+    getDashboardSession(),
+  ])
 
-  const quizzes = await getAuthorQuizIds(supabase, user.id)
-  const publishedQuizzes = quizzes.filter((quiz) => quiz.status === "published")
-
-  const quizIds =
-    selectedQuizId && publishedQuizzes.some((quiz) => quiz.id === selectedQuizId)
-      ? [selectedQuizId]
-      : publishedQuizzes.map((quiz) => quiz.id)
-
-  const selectedQuiz = selectedQuizId
-    ? publishedQuizzes.find((quiz) => quiz.id === selectedQuizId)
-    : null
-
-  const outcomeNames = selectedQuiz
-    ? outcomeNamesForQuiz(
-        selectedQuiz.published_snapshot as PublishedQuizSnapshot | null
-      )
-    : outcomeNamesFromSnapshots(
-        publishedQuizzes.map((quiz) => ({
-          id: quiz.id,
-          published_snapshot: quiz.published_snapshot as PublishedQuizSnapshot | null,
-        }))
-      )
-
-  const summary = await getQuizAnalyticsSummary(
-    supabase,
-    quizIds,
-    outcomeNames
-  )
+  const quizzes = await getAuthorQuizList(supabase, user.id)
 
   return (
     <AnalyticsDashboard
       quizzes={quizzes}
       selectedQuizId={selectedQuizId ?? null}
-      summary={summary}
+      metrics={
+        <Suspense fallback={<AnalyticsMetricsSkeleton />}>
+          <AnalyticsMetrics
+            quizzes={quizzes}
+            selectedQuizId={selectedQuizId ?? null}
+          />
+        </Suspense>
+      }
     />
   )
 }

@@ -44,7 +44,15 @@ export function QuizPlayer({
   const trackingEnabled = Boolean(quizId) && !isPreview
 
   const questions = useMemo(
-    () => [...snapshot.questions].sort((a, b) => a.sort_order - b.sort_order),
+    () =>
+      [...snapshot.questions]
+        .sort((a, b) => a.sort_order - b.sort_order)
+        .map((question) => ({
+          ...question,
+          answers: [...question.answers].sort(
+            (a, b) => a.sort_order - b.sort_order
+          ),
+        })),
     [snapshot.questions]
   )
 
@@ -101,14 +109,35 @@ export function QuizPlayer({
     })
   }, [trackingEnabled, quizId])
 
-  useEffect(() => {
-    if (
-      !trackingEnabled ||
-      !quizId ||
-      state !== "result" ||
-      !winningOutcome ||
-      trackedCompleteRef.current
-    ) {
+  function computeWinningOutcomeFromSelection(
+    selection: Record<string, string[]>
+  ) {
+    const selectedAnswerIds = Object.values(selection).flat()
+    const winner = calculateWinningOutcome(
+      outcomes.map((outcome) => ({
+        id: outcome.id,
+        quiz_id: "",
+        name: outcome.name,
+        description: outcome.description,
+        image_url: outcome.image_url,
+        sort_order: outcome.sort_order,
+      })),
+      selectedAnswerIds,
+      allAnswers
+    )
+
+    return winner
+      ? outcomes.find((outcome) => outcome.id === winner.id) ?? outcomes[0]
+      : outcomes[0]
+  }
+
+  function trackQuizComplete(selection: Record<string, string[]>) {
+    if (!trackingEnabled || !quizId || trackedCompleteRef.current) {
+      return
+    }
+
+    const outcome = computeWinningOutcomeFromSelection(selection)
+    if (!outcome) {
       return
     }
 
@@ -117,10 +146,10 @@ export function QuizPlayer({
       event: "complete",
       quizId,
       sessionId: sessionIdRef.current,
-      resultId: winningOutcome.id,
-      outcomeId: winningOutcome.id,
+      resultId: outcome.id,
+      outcomeId: outcome.id,
     })
-  }, [state, trackingEnabled, quizId, winningOutcome])
+  }
 
   function resetQuiz() {
     sessionIdRef.current = crypto.randomUUID()
@@ -172,7 +201,13 @@ export function QuizPlayer({
 
       const next = [answerId]
       trackAnswers(currentQuestion.id, next)
-      return { ...previous, [currentQuestion.id]: next }
+      const updated = { ...previous, [currentQuestion.id]: next }
+
+      if (questionIndex >= questions.length - 1) {
+        trackQuizComplete(updated)
+      }
+
+      return updated
     })
 
     if (!currentQuestion.allow_multiple) {
@@ -185,8 +220,19 @@ export function QuizPlayer({
   }
 
   function submitMultiple() {
-    if (currentQuestion) {
-      trackAnswers(currentQuestion.id, selectedForCurrent)
+    if (!currentQuestion) {
+      return
+    }
+
+    const updated = {
+      ...selectedByQuestion,
+      [currentQuestion.id]: selectedForCurrent,
+    }
+
+    trackAnswers(currentQuestion.id, selectedForCurrent)
+
+    if (questionIndex >= questions.length - 1) {
+      trackQuizComplete(updated)
     }
 
     if (questionIndex >= questions.length - 1) {
@@ -319,9 +365,7 @@ export function QuizPlayer({
         </h2>
 
         <div className="grid gap-3">
-          {[...currentQuestion.answers]
-            .sort((a, b) => a.sort_order - b.sort_order)
-            .map((answer) => {
+          {currentQuestion.answers.map((answer) => {
               const selected = selectedForCurrent.includes(answer.id)
               return (
                 <button

@@ -3,6 +3,7 @@ import dynamic from "next/dynamic"
 
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
+import { getAuthorDisplayName } from "@/lib/auth/author"
 import { getDashboardSession } from "@/lib/auth/dashboard-session"
 import { getSubscriptionAccessForUser } from "@/lib/subscription-server"
 
@@ -24,12 +25,8 @@ const GuidedQuizCreator = dynamic(
 export default async function GuidedNewQuizPage() {
   const { supabase, user } = await getDashboardSession()
 
-  const [{ data: author }, access] = await Promise.all([
-    supabase
-      .from("authors")
-      .select("display_name")
-      .eq("id", user.id)
-      .maybeSingle(),
+  const [defaultAuthorName, access] = await Promise.all([
+    getAuthorDisplayName(supabase, user.id),
     getSubscriptionAccessForUser(supabase, user.id),
   ])
 
@@ -51,7 +48,7 @@ export default async function GuidedNewQuizPage() {
       </div>
       <GuidedQuizCreator
         canUseAI={access?.canUseAI ?? false}
-        defaultAuthorName={author?.display_name ?? ""}
+        defaultAuthorName={defaultAuthorName ?? ""}
       />
     </div>
   )

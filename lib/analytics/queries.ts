@@ -31,9 +31,36 @@ function startOfDay(date: Date) {
   return next
 }
 
+type DailyCounts = {
+  views: number
+  starts: number
+  completions: number
+}
+
 function buildDailyActivity(
   events: { event_type: string; created_at: string }[]
 ) {
+  const countsByDate = new Map<string, DailyCounts>()
+
+  for (const row of events) {
+    const date = toDateKeyFromTimestamp(row.created_at)
+    const counts = countsByDate.get(date) ?? {
+      views: 0,
+      starts: 0,
+      completions: 0,
+    }
+
+    if (row.event_type === "view") {
+      counts.views += 1
+    } else if (row.event_type === "start") {
+      counts.starts += 1
+    } else if (row.event_type === "complete") {
+      counts.completions += 1
+    }
+
+    countsByDate.set(date, counts)
+  }
+
   const today = startOfDay(new Date())
   const days: QuizAnalyticsSummary["dailyActivity"] = []
 
@@ -41,17 +68,18 @@ function buildDailyActivity(
     const day = new Date(today)
     day.setDate(today.getDate() - index)
     const date = toDateKey(day)
-    const dayEvents = events.filter(
-      (row) => toDateKeyFromTimestamp(row.created_at) === date
-    )
+    const counts = countsByDate.get(date) ?? {
+      views: 0,
+      starts: 0,
+      completions: 0,
+    }
 
     days.push({
       date,
       label: formatDayLabel(date),
-      views: dayEvents.filter((row) => row.event_type === "view").length,
-      starts: dayEvents.filter((row) => row.event_type === "start").length,
-      completions: dayEvents.filter((row) => row.event_type === "complete")
-        .length,
+      views: counts.views,
+      starts: counts.starts,
+      completions: counts.completions,
     })
   }
 
@@ -96,15 +124,33 @@ async function fetchQuizEvents(
   return rows
 }
 
-export async function getAuthorQuizIds(
+export async function getAuthorQuizList(
   supabase: SupabaseClient,
   authorId: string
 ) {
   const { data } = await supabase
     .from("quizzes")
-    .select("id, quiz_title, book_title, status, published_snapshot")
+    .select("id, quiz_title, book_title, status")
     .eq("author_id", authorId)
     .order("updated_at", { ascending: false })
+
+  return data ?? []
+}
+
+export async function getPublishedQuizSnapshots(
+  supabase: SupabaseClient,
+  authorId: string,
+  quizIds: string[]
+) {
+  if (quizIds.length === 0) {
+    return []
+  }
+
+  const { data } = await supabase
+    .from("quizzes")
+    .select("id, published_snapshot")
+    .eq("author_id", authorId)
+    .in("id", quizIds)
 
   return data ?? []
 }
@@ -130,15 +176,34 @@ export async function getQuizAnalyticsSummary(
   since.setDate(since.getDate() - (DAYS - 1))
 
   const rows = await fetchQuizEvents(supabase, quizIds, since)
-  const views = rows.filter((row) => row.event_type === "view").length
-  const starts = rows.filter((row) => row.event_type === "start")
-  const completions = rows.filter((row) => row.event_type === "complete")
-  const shares = rows.filter((row) => row.event_type === "share").length
 
+  let views = 0
+  let starts = 0
+  let completions = 0
+  let shares = 0
   const outcomeMap = new Map<string, number>()
-  for (const row of completions) {
-    if (!row.outcome_id) continue
-    outcomeMap.set(row.outcome_id, (outcomeMap.get(row.outcome_id) ?? 0) + 1)
+
+  for (const row of rows) {
+    switch (row.event_type) {
+      case "view":
+        views += 1
+        break
+      case "start":
+        starts += 1
+        break
+      case "complete":
+        completions += 1
+        if (row.outcome_id) {
+          outcomeMap.set(
+            row.outcome_id,
+            (outcomeMap.get(row.outcome_id) ?? 0) + 1
+          )
+        }
+        break
+      case "share":
+        shares += 1
+        break
+    }
   }
 
   const outcomeCounts = [...outcomeMap.entries()]
@@ -151,13 +216,11 @@ export async function getQuizAnalyticsSummary(
 
   return {
     views,
-    starts: starts.length,
-    completions: completions.length,
+    starts,
+    completions,
     shares,
     completionRate:
-      starts.length > 0
-        ? Math.round((completions.length / starts.length) * 100)
-        : 0,
+      starts > 0 ? Math.round((completions / starts) * 100) : 0,
     outcomeCounts,
     dailyActivity: buildDailyActivity(rows),
   }

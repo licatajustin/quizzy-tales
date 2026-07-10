@@ -1,5 +1,6 @@
 import { getAccountDeletionInfo } from "@/lib/account/deletion-info"
 import { DeleteAccountSection } from "@/components/settings/delete-account-section"
+import { getAuthorDisplayName } from "@/lib/auth/author"
 import { getDashboardSession } from "@/lib/auth/dashboard-session"
 import {
   Card,
@@ -12,16 +13,10 @@ import {
 export default async function AccountSettingsPage() {
   const { supabase, user } = await getDashboardSession()
 
-  const [authorResult, deletionInfo] = await Promise.all([
-    supabase
-      .from("authors")
-      .select("display_name")
-      .eq("id", user.id)
-      .maybeSingle(),
+  const [displayName, deletionInfo] = await Promise.all([
+    getAuthorDisplayName(supabase, user.id),
     getAccountDeletionInfo(supabase, user),
   ])
-
-  const author = authorResult.data
 
   if ("error" in deletionInfo) {
     return (
@@ -51,7 +46,7 @@ export default async function AccountSettingsPage() {
         <CardContent className="space-y-3 text-sm">
           <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
             <span className="text-muted-foreground">Display name</span>
-            <span className="font-medium">{author?.display_name ?? "Author"}</span>
+            <span className="font-medium">{displayName ?? "Author"}</span>
           </div>
           <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
             <span className="text-muted-foreground">Email</span>

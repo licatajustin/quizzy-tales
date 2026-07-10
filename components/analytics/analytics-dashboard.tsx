@@ -1,19 +1,7 @@
-"use client"
-
 import Link from "next/link"
 
-import { ActivityChart } from "@/components/analytics/activity-chart"
-import { AnalyticsStats } from "@/components/analytics/analytics-stats"
-import { OutcomeBreakdown } from "@/components/analytics/outcome-breakdown"
+import { AnalyticsQuizFilter } from "@/components/analytics/analytics-quiz-filter"
 import { Button } from "@/components/ui/button"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import type { QuizAnalyticsSummary } from "@/lib/analytics/types"
 
 type AnalyticsDashboardProps = {
   quizzes: {
@@ -23,13 +11,13 @@ type AnalyticsDashboardProps = {
     status: string
   }[]
   selectedQuizId: string | null
-  summary: QuizAnalyticsSummary
+  metrics: React.ReactNode
 }
 
 export function AnalyticsDashboard({
   quizzes,
   selectedQuizId,
-  summary,
+  metrics,
 }: AnalyticsDashboardProps) {
   const publishedQuizzes = quizzes.filter((quiz) => quiz.status === "published")
 
@@ -44,33 +32,10 @@ export function AnalyticsDashboard({
         </div>
 
         {publishedQuizzes.length > 0 ? (
-          <form className="w-full sm:w-64">
-            <Select
-              name="quiz"
-              defaultValue={selectedQuizId ?? "all"}
-              onValueChange={(value) => {
-                const url = new URL(window.location.href)
-                if (value === "all") {
-                  url.searchParams.delete("quiz")
-                } else {
-                  url.searchParams.set("quiz", value)
-                }
-                window.location.href = url.toString()
-              }}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="All quizzes" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All quizzes</SelectItem>
-                {publishedQuizzes.map((quiz) => (
-                  <SelectItem key={quiz.id} value={quiz.id}>
-                    {quiz.quiz_title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </form>
+          <AnalyticsQuizFilter
+            publishedQuizzes={publishedQuizzes}
+            selectedQuizId={selectedQuizId}
+          />
         ) : null}
       </div>
 
@@ -86,13 +51,7 @@ export function AnalyticsDashboard({
           </Button>
         </div>
       ) : (
-        <>
-          <AnalyticsStats summary={summary} />
-          <div className="grid gap-6 lg:grid-cols-2">
-            <ActivityChart dailyActivity={summary.dailyActivity} />
-            <OutcomeBreakdown outcomeCounts={summary.outcomeCounts} />
-          </div>
-        </>
+        metrics
       )}
     </div>
   )

@@ -1,4 +1,4 @@
-import { faqs } from "@/components/marketing/content"
+import { faqs } from "@/lib/marketing/content-data"
 import { getSiteUrl } from "@/lib/stripe/env"
 import {
   DEFAULT_DESCRIPTION,

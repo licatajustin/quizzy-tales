@@ -1,3 +1,4 @@
+import { AnalyticsMetricsSkeleton } from "@/components/analytics/analytics-metrics-skeleton"
 import { Skeleton } from "@/components/ui/skeleton"
 
 export default function AnalyticsLoading() {
@@ -8,12 +9,7 @@ export default function AnalyticsLoading() {
         <Skeleton className="h-5 w-96 max-w-full" />
       </div>
       <Skeleton className="h-10 w-full max-w-xs rounded-lg" />
-      <div className="grid gap-4 sm:grid-cols-3">
-        <Skeleton className="h-24 rounded-xl" />
-        <Skeleton className="h-24 rounded-xl" />
-        <Skeleton className="h-24 rounded-xl" />
-      </div>
-      <Skeleton className="h-72 w-full rounded-xl" />
+      <AnalyticsMetricsSkeleton />
     </div>
   )
 }
