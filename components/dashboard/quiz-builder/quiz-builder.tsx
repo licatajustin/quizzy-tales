@@ -1,6 +1,6 @@
 "use client"
 
-import { Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState, useTransition } from "react"
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import {
   ArrowDown,
@@ -14,7 +14,6 @@ import { toast } from "sonner"
 
 import { saveQuizBuilderDraft } from "@/app/actions/ai"
 import { QuizBreakdownPanel } from "@/components/dashboard/quiz-builder/quiz-breakdown-panel"
-import { CheckoutReturnHandler } from "@/components/checkout/checkout-return-handler"
 import { AiUpgradeDialog } from "@/components/subscription/ai-upgrade-dialog"
 import { Button } from "@/components/ui/button"
 import {
@@ -403,9 +402,6 @@ export function QuizBuilder() {
 
   return (
     <div className="flex h-[calc(100vh-8rem)] min-h-[640px] flex-col gap-4">
-      <Suspense fallback={null}>
-        <CheckoutReturnHandler successMessage="Plan active. You can keep building your quiz." />
-      </Suspense>
       <div className="flex shrink-0 flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 
+import { getSafeRedirectPath } from "@/lib/auth/safe-redirect"
 import { createClient } from "@/lib/supabase/server"
 import { getAuthRedirectUrl } from "@/lib/supabase/env"
 
@@ -16,6 +17,7 @@ export async function signIn(
 ): Promise<AuthActionState> {
   const email = String(formData.get("email") ?? "").trim()
   const password = String(formData.get("password") ?? "")
+  const next = getSafeRedirectPath(String(formData.get("next") ?? ""))
 
   if (!email || !password) {
     return { error: "Email and password are required." }
@@ -29,7 +31,7 @@ export async function signIn(
   }
 
   revalidatePath("/", "layout")
-  redirect("/dashboard")
+  redirect(next)
 }
 
 export async function signUp(

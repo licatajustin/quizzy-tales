@@ -1,16 +1,13 @@
 "use server"
 
 import { redirect } from "next/navigation"
-import type Stripe from "stripe"
 
-import { getLiveQuizPriceId } from "@/lib/products"
 import { getStripe } from "@/lib/stripe/client"
 import { getSiteUrl } from "@/lib/stripe/env"
 import {
   buildLiveQuizLineItem,
   updateSubscriptionQuantity,
 } from "@/lib/stripe/subscription-quantity"
-import { graceEndsAtFromNow } from "@/lib/subscription"
 import {
   getAuthorBillingProfile,
   getPublishedQuizCount,
@@ -196,7 +193,6 @@ export async function incrementSubscriptionForPublish(
     const { syncAuthorSubscriptionToDatabase } = await import(
       "@/lib/stripe/sync-subscription"
     )
-    const stripe = getStripe()
     const subscription = await updateSubscriptionQuantity(
       author.subscription_id,
       nextQuantity
@@ -211,34 +207,6 @@ export async function incrementSubscriptionForPublish(
           : "Could not update subscription.",
     }
   }
-}
-
-export async function decrementSubscriptionOnUnpublish(
-  userId: string,
-  author: Awaited<ReturnType<typeof getAuthorBillingProfile>>
-) {
-  if (!author?.subscription_id || !isPaidSubscriptionStatus(author.subscription_status)) {
-    return
-  }
-
-  const supabase = await createClient()
-  const publishedCount = await getPublishedQuizCount(supabase, userId)
-  const nextQuantity = Math.max(1, publishedCount)
-
-  const { syncAuthorSubscriptionToDatabase } = await import(
-    "@/lib/stripe/sync-subscription"
-  )
-  const stripe = getStripe()
-
-  if (nextQuantity === author.subscription_quantity) {
-    return
-  }
-
-  const subscription = await updateSubscriptionQuantity(
-    author.subscription_id,
-    nextQuantity
-  )
-  await syncAuthorSubscriptionToDatabase(userId, subscription)
 }
 
 export async function syncCheckoutSession(
@@ -276,50 +244,4 @@ export async function createCustomerPortalSession(): Promise<StripeActionResult>
   })
 
   return { url: session.url }
-}
-
-export async function syncAuthorSubscription(
-  authorId: string,
-  subscription: Stripe.Subscription
-) {
-  const { syncAuthorSubscriptionToDatabase } = await import(
-    "@/lib/stripe/sync-subscription"
-  )
-
-  await syncAuthorSubscriptionToDatabase(authorId, subscription)
-}
-
-export async function clearAuthorSubscription(authorId: string) {
-  const admin = (await import("@/lib/supabase/admin")).createAdminClient()
-
-  await admin
-    .from("authors")
-    .update({
-      subscription_id: null,
-      subscription_status: "inactive",
-      subscription_end_date: null,
-      subscription_cancel_at_period_end: false,
-      subscription_quantity: 0,
-      subscription_grace_ends_at: graceEndsAtFromNow(),
-    })
-    .eq("id", authorId)
-}
-
-export async function publishQuizAfterCheckout(
-  authorId: string,
-  quizId: string
-) {
-  const admin = (await import("@/lib/supabase/admin")).createAdminClient()
-  const { data: quiz } = await admin
-    .from("quizzes")
-    .select("author_id")
-    .eq("id", quizId)
-    .maybeSingle()
-
-  if (!quiz || quiz.author_id !== authorId) {
-    return
-  }
-
-  const { executePublishQuiz } = await import("@/lib/quiz/publish-billing")
-  await executePublishQuiz(admin, quizId)
 }

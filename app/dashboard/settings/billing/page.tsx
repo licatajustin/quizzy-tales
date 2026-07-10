@@ -1,8 +1,7 @@
 import { CreditCard } from "lucide-react"
 
-import { getDashboardSession } from "@/lib/auth/dashboard-session"
 import { createCustomerPortalSession } from "@/app/actions/stripe"
-import { BillingCheckoutReturn } from "@/components/checkout/checkout-return-handler"
+import { CheckoutSyncedToast } from "@/components/checkout/checkout-synced-toast"
 import { PlanComparison } from "@/components/settings/plan-comparison"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -18,6 +17,8 @@ import {
   getPlanLabel,
   refreshAuthorSubscriptionFromStripe,
 } from "@/lib/billing"
+import { syncCheckoutReturnIfNeeded } from "@/lib/billing/checkout-return"
+import { getDashboardSession } from "@/lib/auth/dashboard-session"
 import { LIVE_QUIZ_PRICE_LABEL } from "@/lib/products"
 import {
   formatSubscriptionDate,
@@ -29,8 +30,19 @@ import {
   getSubscriptionAccessForUser,
 } from "@/lib/subscription-server"
 
-export default async function BillingPage() {
+export default async function BillingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ billing?: string; session_id?: string }>
+}) {
+  const query = await searchParams
   const { supabase, user } = await getDashboardSession()
+
+  await syncCheckoutReturnIfNeeded(
+    user.id,
+    query,
+    "/dashboard/settings/billing"
+  )
 
   const billingProfile = await getAuthorBillingProfile(supabase, user.id)
 
@@ -65,7 +77,7 @@ export default async function BillingPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-8">
-      <BillingCheckoutReturn />
+      <CheckoutSyncedToast message="Author plan active. Builder credits are unlocked and you can publish when ready." />
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-3xl font-semibold tracking-tight">Billing</h1>

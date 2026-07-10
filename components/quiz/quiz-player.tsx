@@ -21,6 +21,7 @@ type QuizPlayerProps = {
   quizId?: string
   snapshot: PublishedQuizSnapshot
   isPreview?: boolean
+  children?: React.ReactNode
 }
 
 type PlayerState = "intro" | "playing" | "result"
@@ -29,6 +30,7 @@ export function QuizPlayer({
   quizId,
   snapshot,
   isPreview = false,
+  children,
 }: QuizPlayerProps) {
   const [state, setState] = useState<PlayerState>("intro")
   const [questionIndex, setQuestionIndex] = useState(0)
@@ -197,36 +199,41 @@ export function QuizPlayer({
   if (state === "intro") {
     return (
       <div className="mx-auto flex min-h-[70vh] w-full max-w-2xl flex-col justify-center gap-8 px-6 py-12">
-        {isPreview ? (
-          <p className="text-center text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            Author preview — draft content
-          </p>
-        ) : null}
+        {children ?? (
+          <>
+            {isPreview ? (
+              <p className="text-center text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Author preview — draft content
+              </p>
+            ) : null}
 
-        {snapshot.cover_image_url ? (
-          <div className="relative mx-auto aspect-[4/3] w-full max-w-md overflow-hidden rounded-2xl border border-border/60">
-            <Image
-              src={snapshot.cover_image_url}
-              alt=""
-              fill
-              className="object-cover"
-              sizes="(max-width: 768px) 100vw, 28rem"
-              priority
-            />
-          </div>
-        ) : null}
+            {snapshot.cover_image_url ? (
+              <div className="relative mx-auto aspect-[4/3] w-full max-w-md overflow-hidden rounded-2xl border border-border/60">
+                <Image
+                  src={snapshot.cover_image_url}
+                  alt={`Cover for ${snapshot.quiz_title}`}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, 28rem"
+                  priority
+                  unoptimized={snapshot.cover_image_url.startsWith("data:")}
+                />
+              </div>
+            ) : null}
 
-        <div className="space-y-3 text-center">
-          <p className="text-sm font-medium text-muted-foreground">
-            {snapshot.book_title}
-          </p>
-          <h1 className="text-3xl font-semibold tracking-tight">
-            {snapshot.quiz_title}
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            {questions.length} questions · {outcomes.length} possible results
-          </p>
-        </div>
+            <div className="space-y-3 text-center">
+              <p className="text-sm font-medium text-muted-foreground">
+                {snapshot.book_title}
+              </p>
+              <h1 className="text-3xl font-semibold tracking-tight">
+                {snapshot.quiz_title}
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                {questions.length} questions · {outcomes.length} possible results
+              </p>
+            </div>
+          </>
+        )}
 
         <Button
           type="button"
@@ -255,10 +262,11 @@ export function QuizPlayer({
           <div className="relative mx-auto aspect-square w-full max-w-xs overflow-hidden rounded-2xl border border-border/60">
             <Image
               src={winningOutcome.image_url}
-              alt=""
+              alt={`${winningOutcome.name} from ${snapshot.quiz_title}`}
               fill
               className="object-cover"
               sizes="(max-width: 768px) 80vw, 20rem"
+              unoptimized={winningOutcome.image_url.startsWith("data:")}
             />
           </div>
         ) : null}

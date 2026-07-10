@@ -1,7 +1,9 @@
 import dynamic from "next/dynamic"
 import { notFound } from "next/navigation"
 
+import { CheckoutSyncedToast } from "@/components/checkout/checkout-synced-toast"
 import { getDashboardSession } from "@/lib/auth/dashboard-session"
+import { syncCheckoutReturnIfNeeded } from "@/lib/billing/checkout-return"
 import { getQuizDraft } from "@/lib/quiz/queries"
 import {
   buildPublishedSnapshot,
@@ -20,19 +22,32 @@ const QuizEditor = dynamic(
 
 type QuizEditorPageProps = {
   params: Promise<{ id: string }>
+  searchParams: Promise<{ billing?: string; session_id?: string }>
 }
 
-export default async function QuizEditorPage({ params }: QuizEditorPageProps) {
+export default async function QuizEditorPage({
+  params,
+  searchParams,
+}: QuizEditorPageProps) {
   const { id } = await params
+  const query = await searchParams
   const { supabase, user } = await getDashboardSession()
 
-  const draft = await getQuizDraft(supabase, id)
+  await syncCheckoutReturnIfNeeded(
+    user.id,
+    query,
+    `/dashboard/quizzes/${id}`
+  )
+
+  const [draft, access] = await Promise.all([
+    getQuizDraft(supabase, id),
+    getSubscriptionAccessForUser(supabase, user.id),
+  ])
 
   if (!draft || draft.quiz.author_id !== user.id) {
     notFound()
   }
 
-  const access = await getSubscriptionAccessForUser(supabase, user.id)
   const draftSnapshot = buildPublishedSnapshot(draft)
   const hasLiveChanges = hasUnpublishedChanges(draft.quiz, draftSnapshot)
 
@@ -42,6 +57,7 @@ export default async function QuizEditorPage({ params }: QuizEditorPageProps) {
 
   return (
     <div className="mx-auto w-full max-w-5xl">
+      <CheckoutSyncedToast message="Payment complete. Your quiz should be live shortly." />
       <QuizEditor
         draft={draft}
         access={access}

@@ -2,22 +2,19 @@
 
 import { redirect } from "next/navigation"
 
-import { deleteAuthorStorage } from "@/lib/account/delete-author-storage"
 import {
   DELETE_ACCOUNT_CONFIRMATION_PHRASE,
   isDeleteAccountConfirmationValid,
 } from "@/lib/account/constants"
+import { deleteAuthorStorage } from "@/lib/account/delete-author-storage"
 import { refreshAuthorSubscriptionFromStripe } from "@/lib/billing"
 import { getStripe } from "@/lib/stripe/client"
 import { cancelSubscription } from "@/lib/stripe/subscription-quantity"
 import {
-  formatSubscriptionDate,
   requiresSubscriptionCancellationBeforeAccountDelete,
 } from "@/lib/subscription"
 import {
   getAuthorBillingProfile,
-  getAuthorQuizCount,
-  getPublishedQuizCount,
 } from "@/lib/subscription-server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
@@ -25,19 +22,6 @@ import { createClient } from "@/lib/supabase/server"
 export type AccountActionResult = {
   error?: string
 }
-
-export type AccountDeletionInfo = {
-  canDelete: boolean
-  requiresSubscriptionCancellation: boolean
-  quizCount: number
-  publishedQuizCount: number
-  isCancelingAtPeriodEnd: boolean
-  subscriptionEndDate: string | null
-}
-
-export type AccountDeletionInfoResult =
-  | ({ error: string } & Partial<AccountDeletionInfo>)
-  | AccountDeletionInfo
 
 async function requireAuthenticatedUser() {
   const supabase = await createClient()
@@ -50,37 +34,6 @@ async function requireAuthenticatedUser() {
   }
 
   return { supabase, user }
-}
-
-export async function getAccountDeletionInfo(): Promise<AccountDeletionInfoResult> {
-  const { supabase, user } = await requireAuthenticatedUser()
-
-  let author = await getAuthorBillingProfile(supabase, user.id)
-
-  if (!author) {
-    return { error: "Author profile not found." }
-  }
-
-  if (author.stripe_customer_id) {
-    author = await refreshAuthorSubscriptionFromStripe(user.id, author)
-  }
-
-  const [quizCount, publishedQuizCount] = await Promise.all([
-    getAuthorQuizCount(supabase, user.id),
-    getPublishedQuizCount(supabase, user.id),
-  ])
-
-  const requiresSubscriptionCancellation =
-    requiresSubscriptionCancellationBeforeAccountDelete(author)
-
-  return {
-    canDelete: !requiresSubscriptionCancellation,
-    requiresSubscriptionCancellation,
-    quizCount,
-    publishedQuizCount,
-    isCancelingAtPeriodEnd: author.subscription_cancel_at_period_end,
-    subscriptionEndDate: formatSubscriptionDate(author.subscription_end_date),
-  }
 }
 
 export async function deleteAccount(

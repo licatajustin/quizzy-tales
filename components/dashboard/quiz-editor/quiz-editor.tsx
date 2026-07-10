@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Suspense, useTransition } from "react"
+import { useTransition } from "react"
 import { ExternalLink, Eye, Rocket, Undo2 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -12,7 +12,6 @@ import {
   startPublishCheckout,
   startSubscriptionCheckout,
 } from "@/app/actions/stripe"
-import { CheckoutReturnHandler } from "@/components/checkout/checkout-return-handler"
 import { showAiLimitToast } from "@/lib/ai/show-ai-limit-toast"
 import { DetailsTab } from "@/components/dashboard/quiz-editor/details-tab"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -122,10 +121,6 @@ export function QuizEditor({
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
-      <Suspense fallback={null}>
-        <CheckoutReturnHandler successMessage="Payment complete. Your quiz should be live shortly." />
-      </Suspense>
-
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="space-y-2">
           <div className="flex flex-wrap items-center gap-2">

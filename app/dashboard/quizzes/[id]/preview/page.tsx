@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation"
 
+import { QuizIntroHero } from "@/components/quiz/quiz-intro-hero"
 import { QuizPlayer } from "@/components/quiz/quiz-player"
 import { getDashboardSession } from "@/lib/auth/dashboard-session"
 import { buildPublishedSnapshot } from "@/lib/quiz/published-snapshot"
@@ -20,5 +21,16 @@ export default async function QuizPreviewPage({ params }: PreviewPageProps) {
 
   const snapshot = buildPublishedSnapshot(draft)
 
-  return <QuizPlayer snapshot={snapshot} isPreview />
+  return (
+    <div className="min-h-svh bg-background">
+      <QuizPlayer snapshot={snapshot} isPreview>
+        <QuizIntroHero
+          snapshot={snapshot}
+          questionCount={snapshot.questions.length}
+          outcomeCount={snapshot.outcomes.length}
+          isPreview
+        />
+      </QuizPlayer>
+    </div>
+  )
 }

@@ -2,10 +2,10 @@ import { NextResponse } from "next/server"
 import type Stripe from "stripe"
 
 import {
-  clearAuthorSubscription,
-  publishQuizAfterCheckout,
-  syncAuthorSubscription,
-} from "@/app/actions/stripe"
+  clearAuthorSubscriptionFromWebhook,
+  publishQuizAfterCheckoutFromWebhook,
+  syncAuthorSubscriptionFromWebhook,
+} from "@/lib/stripe/webhook-handlers"
 import {
   findAuthorIdForSubscription,
   syncAuthorSubscriptionByCustomerId,
@@ -47,7 +47,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
   const stripe = getStripe()
   const subscription = await stripe.subscriptions.retrieve(subscriptionId)
-  await syncAuthorSubscription(authorId, subscription)
+  await syncAuthorSubscriptionFromWebhook(authorId, subscription)
 
   const admin = createAdminClient()
   await admin
@@ -56,7 +56,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     .eq("id", authorId)
 
   if (intent === "publish" && quizId) {
-    await publishQuizAfterCheckout(authorId, quizId)
+    await publishQuizAfterCheckoutFromWebhook(authorId, quizId)
   }
 }
 
@@ -90,7 +90,7 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
       : subscription.customer.id
 
   if (authorId) {
-    await clearAuthorSubscription(authorId)
+    await clearAuthorSubscriptionFromWebhook(authorId)
     return
   }
 

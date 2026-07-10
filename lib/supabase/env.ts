@@ -34,8 +34,12 @@ export function getSupabaseServiceRoleKey() {
 }
 
 export function getAuthRedirectUrl() {
-  return (
-    process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL ??
-    `${process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"}/auth/callback`
-  )
+  if (process.env.NODE_ENV === "development") {
+    return (
+      process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL ??
+      `${process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"}/auth/callback`
+    )
+  }
+
+  return `${process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"}/auth/callback`
 }

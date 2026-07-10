@@ -3,10 +3,8 @@
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 
-import {
-  decrementSubscriptionOnUnpublish,
-  incrementSubscriptionForPublish,
-} from "@/app/actions/stripe"
+import { incrementSubscriptionForPublish } from "@/app/actions/stripe"
+import { decrementSubscriptionOnUnpublish } from "@/lib/stripe/unpublish-billing"
 import { getQuizDraft } from "@/lib/quiz/queries"
 import { executePublishQuiz } from "@/lib/quiz/publish-billing"
 import { validateQuizForPublish } from "@/lib/quiz/published-snapshot"
