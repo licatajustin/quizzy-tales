@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
-import { Loader2, Sparkles, Wand2 } from "lucide-react"
+import { Loader2, BookOpen, Wand2 } from "lucide-react"
 import { toast } from "sonner"
 
 import { saveAiGeneratedQuiz } from "@/app/actions/ai"
@@ -72,8 +72,8 @@ export function AiQuizWorkbench({
   if (!canUseAI) {
     return (
       <UpgradePrompt
-        title="AI trial limit reached"
-        description="Start the author plan to unlock full AI while building, or create quizzes manually."
+        title="Included credits used"
+        description="Start the author plan to unlock the full builder, or create quizzes manually."
       />
     )
   }
@@ -169,8 +169,8 @@ export function AiQuizWorkbench({
       <Card className="h-fit bg-card">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Sparkles className="size-4 text-primary" />
-            Generate with AI
+            <BookOpen className="size-4 text-primary" />
+            Draft from your book
           </CardTitle>
           <CardDescription>
             Describe your book and we&apos;ll draft outcomes, questions, and

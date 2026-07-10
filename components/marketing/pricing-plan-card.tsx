@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { Sparkles } from "lucide-react"
+import { Star } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -62,7 +62,7 @@ function PricingPlanCard({ plan }: PricingPlanCardProps) {
         >
           <Link href={SIGN_UP_PATH}>
             {plan.cta}
-            {plan.highlighted ? <Sparkles className="ml-1 size-4" /> : null}
+            {plan.highlighted ? <Star className="ml-1 size-4" /> : null}
           </Link>
         </Button>
       </CardFooter>

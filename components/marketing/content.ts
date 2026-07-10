@@ -31,7 +31,7 @@ export type Feature = {
 export const features: Feature[] = [
   {
     icon: Wand2,
-    title: "AI that reads like your world",
+    title: "Drafts that read like your world",
     description:
       "Generate outcomes and questions from your synopsis in one pass. Revise with plain English, not spreadsheets.",
   },
@@ -93,17 +93,17 @@ export const pricingPlans: PricingPlan[] = [
     description: "Build unlimited quizzes for free",
     price: "$0",
     interval: "/forever",
-    perks: ["Unlimited draft quizzes", "AI trial while building", "Preview mode"],
+    perks: ["Unlimited draft quizzes", "Included credits while building", "Preview mode"],
     cta: "Start creating",
   },
   {
     name: "Author plan",
-    description: "$15/mo includes 1 live quiz + full AI",
+    description: "$15/mo includes 1 live quiz + full builder",
     price: "$15",
     interval: "/month",
     perks: [
       "1 live quiz slot included",
-      "Full AI builder & revision",
+      "Full quiz builder & revision",
       "Engagement analytics",
       "Extra live quizzes +$15/mo each",
     ],
@@ -125,14 +125,14 @@ export const faqs = [
       "Yes. You keep editing your draft anytime. When you're ready, publish changes to update what readers see — without breaking your link.",
   },
   {
-    question: "How does AI generation work?",
+    question: "How does quiz drafting work?",
     answer:
-      "Paste your book synopsis and pick a tone. QuizzyTales drafts character outcomes, questions, and weighted answers you can refine in the editor. A free AI trial helps you build before going live.",
+      "Paste your book synopsis and pick a tone. QuizzyTales drafts character outcomes, questions, and weighted answers you can refine in the editor. Included credits help you build before going live.",
   },
   {
     question: "How does pricing work?",
     answer:
-      "Drafts are free with a small AI trial. The author plan is $15/month and includes 1 live quiz slot plus full AI access — subscribe anytime, publish when ready. Each additional simultaneous live quiz is +$15/month.",
+      "Drafts are free with a small set of included credits. The author plan is $15/month and includes 1 live quiz slot plus full builder access — subscribe anytime, publish when ready. Each additional simultaneous live quiz is +$15/month.",
   },
 ] as const
 

@@ -18,7 +18,7 @@ import type { SubscriptionAccess } from "@/lib/subscription"
 
 const BILLING_PERKS = [
   "1 live quiz slot included",
-  "Full AI builder, revision & portraits",
+  "Full quiz builder, revision & portraits",
   "Unlimited draft quizzes",
   "Engagement analytics on live quizzes",
   "Cancel anytime from billing",
@@ -47,8 +47,8 @@ export function PlanComparison({
         <h2 className="text-lg font-semibold">Author plan</h2>
         <p className="text-sm text-muted-foreground">
           {access.hasActivePlan
-            ? "Your plan includes AI access and live quiz slots. Add more slots when you publish additional quizzes."
-            : "Subscribe to unlock AI while building. Includes 1 live quiz — publish when you're ready."}
+            ? "Your plan includes builder credits and live quiz slots. Add more slots when you publish additional quizzes."
+            : "Subscribe to unlock the full builder. Includes 1 live quiz — publish when you're ready."}
         </p>
       </div>
 
@@ -84,11 +84,11 @@ export function PlanComparison({
               <span className="font-medium">{access.availableLiveSlots}</span>
             </p>
             <p>
-              <span className="text-muted-foreground">AI text left:</span>{" "}
+              <span className="text-muted-foreground">Text credits left:</span>{" "}
               <span className="font-medium">{access.aiTextRemaining}</span>
             </p>
             <p>
-              <span className="text-muted-foreground">AI portraits left:</span>{" "}
+              <span className="text-muted-foreground">Portrait credits left:</span>{" "}
               <span className="font-medium">{access.aiImageRemaining}</span>
             </p>
           </div>

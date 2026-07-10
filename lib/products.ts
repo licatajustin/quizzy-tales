@@ -35,7 +35,7 @@ export function getBillingProducts(): BillingProduct[] {
     {
       id: PRODUCT_IDS.liveQuizMonthly,
       name: "Author plan",
-      description: "$15/month includes 1 live quiz slot and full AI access.",
+      description: "$15/month includes 1 live quiz slot and full builder access.",
       priceLabel: LIVE_QUIZ_PRICE_LABEL,
       intervalLabel: "/month",
       priceId: getLiveQuizPriceId(),

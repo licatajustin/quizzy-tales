@@ -9,7 +9,7 @@ export function PricingSection() {
       <SectionHeader
         eyebrow="Pricing"
         title="Start free. Subscribe when you're ready."
-        description="Unlimited drafts and an AI trial. $15/month unlocks full AI and includes 1 live quiz — publish when your quiz is ready."
+        description="Unlimited drafts and included credits. $15/month unlocks the full builder and includes 1 live quiz — publish when your quiz is ready."
         align="center"
         className="mb-12"
       />

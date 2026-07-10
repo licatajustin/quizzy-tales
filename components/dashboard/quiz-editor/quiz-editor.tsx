@@ -55,7 +55,7 @@ export function QuizEditor({
 
     showAiLimitToast({
       description:
-        "You've used this month's AI credits. Add another live quiz slot in Billing for more.",
+        "You've used this month's builder credits. Add another live quiz slot in Billing for more.",
     })
   }
 
@@ -188,7 +188,7 @@ export function QuizEditor({
           <TabsTrigger value="questions">
             Questions ({draft.questions.length})
           </TabsTrigger>
-          <TabsTrigger value="ai">AI Assist</TabsTrigger>
+          <TabsTrigger value="ai">Revise</TabsTrigger>
         </TabsList>
 
         <TabsContent value="details" className="mt-6">

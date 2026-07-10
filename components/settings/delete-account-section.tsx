@@ -99,7 +99,7 @@ export function DeleteAccountSection({
                 working immediately
               </li>
             ) : null}
-            <li>Analytics, reader sessions, and AI usage history</li>
+            <li>Analytics, reader sessions, and builder usage history</li>
             <li>Uploaded cover images and outcome portraits</li>
             <li>Your author profile and billing records</li>
           </ul>

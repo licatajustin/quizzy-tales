@@ -52,7 +52,7 @@ export function CheckoutReturnHandler({
 export function BillingCheckoutReturn() {
   return (
     <Suspense fallback={null}>
-      <CheckoutReturnHandler successMessage="Author plan active. AI is unlocked and you can publish when ready." />
+      <CheckoutReturnHandler successMessage="Author plan active. Builder credits are unlocked and you can publish when ready." />
     </Suspense>
   )
 }
