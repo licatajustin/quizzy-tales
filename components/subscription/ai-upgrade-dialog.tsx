@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useTransition } from "react"
-import { Loader2, Sparkles } from "lucide-react"
+import { Loader2, Wand2 } from "lucide-react"
 
 import { persistQuizBuilderDraft } from "@/app/actions/ai"
 import {
@@ -94,19 +94,19 @@ export function AiUpgradeDialog({
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle className="flex items-center gap-2">
-            <Sparkles className="size-4 text-primary" />
-            Unlock more AI
+            <Wand2 className="size-4 text-primary" />
+            Unlock more credits
           </AlertDialogTitle>
           <AlertDialogDescription asChild>
             <div className="space-y-3 text-left text-sm text-muted-foreground">
               <p>
                 {progressSaved
                   ? "Your builder progress is saved in this browser."
-                  : "Subscribe to unlock full AI while building."}
+                  : "Subscribe to unlock the full builder while you work."}
               </p>
               <p>
                 The author plan is {LIVE_QUIZ_PRICE_LABEL}/month and includes 1
-                live quiz slot plus full AI access. Checkout opens on Stripe&apos;s
+                live quiz slot plus full builder access. Checkout opens on Stripe&apos;s
                 secure page.
               </p>
               {!isDraftValid && missingFields.length > 0 ? (

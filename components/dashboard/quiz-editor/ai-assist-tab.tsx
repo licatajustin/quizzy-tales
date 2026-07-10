@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
-import { Check, Loader2, Sparkles, X } from "lucide-react"
+import { Check, Loader2, PenLine, X } from "lucide-react"
 import { toast } from "sonner"
 
 import { applyAiRevisionPatch } from "@/app/actions/ai"
@@ -45,8 +45,8 @@ export function AiAssistTab({ quizId, canUseAI, onUpgrade }: AiAssistTabProps) {
   if (!canUseAI) {
     return (
       <UpgradePrompt
-        title="AI Assist requires a plan"
-        description="Start the author plan to unlock AI revision on your quizzes."
+        title="Revision requires a plan"
+        description="Start the author plan to unlock quiz revision and more monthly credits."
       />
     )
   }
@@ -55,7 +55,7 @@ export function AiAssistTab({ quizId, canUseAI, onUpgrade }: AiAssistTabProps) {
     const trimmed = nextInstruction.trim()
 
     if (trimmed.length < 3) {
-      toast.error("Enter an instruction for the AI.")
+      toast.error("Enter a revision instruction.")
       return
     }
 
@@ -82,7 +82,7 @@ export function AiAssistTab({ quizId, canUseAI, onUpgrade }: AiAssistTabProps) {
         ) {
           showAiLimitToast({
             description:
-              "Start the author plan to unlock AI revision and more monthly credits.",
+              "Start the author plan to unlock revision and more monthly credits.",
             onUpgrade,
           })
           return
@@ -124,7 +124,7 @@ export function AiAssistTab({ quizId, canUseAI, onUpgrade }: AiAssistTabProps) {
         return
       }
 
-      toast.success("AI changes applied")
+      toast.success("Changes applied")
       setPatch(null)
       setPreviewQuiz(null)
       setInstruction("")
@@ -140,7 +140,7 @@ export function AiAssistTab({ quizId, canUseAI, onUpgrade }: AiAssistTabProps) {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold">AI Assist</h2>
+        <h2 className="text-lg font-semibold">Revise</h2>
         <p className="text-sm text-muted-foreground">
           Describe how you want the quiz to change. Review the patch before
           applying it to your draft.
@@ -150,7 +150,7 @@ export function AiAssistTab({ quizId, canUseAI, onUpgrade }: AiAssistTabProps) {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
-            <Sparkles className="size-4 text-primary" />
+            <PenLine className="size-4 text-primary" />
             Revision instruction
           </CardTitle>
           <CardDescription>
@@ -192,7 +192,7 @@ export function AiAssistTab({ quizId, canUseAI, onUpgrade }: AiAssistTabProps) {
             {isGenerating ? (
               <Loader2 className="animate-spin" data-icon="inline-start" />
             ) : (
-              <Sparkles data-icon="inline-start" />
+              <PenLine data-icon="inline-start" />
             )}
             {isGenerating ? "Revising..." : "Generate revision"}
           </Button>

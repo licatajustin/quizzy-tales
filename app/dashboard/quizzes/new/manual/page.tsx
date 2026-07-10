@@ -25,7 +25,7 @@ export default async function ManualNewQuizPage() {
           </p>
         </div>
         <Button asChild variant="ghost" size="sm" className="rounded-full">
-          <Link href="/dashboard/quizzes/new">Use AI builder</Link>
+          <Link href="/dashboard/quizzes/new">Choose another path</Link>
         </Button>
       </div>
       <NewQuizForm />

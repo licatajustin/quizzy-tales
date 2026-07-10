@@ -3,7 +3,7 @@
 import { useRef, useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
-import { ImagePlus, Loader2, Sparkles, Trash2 } from "lucide-react"
+import { ImagePlus, Loader2, Wand2, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 
 import { showAiLimitToast } from "@/lib/ai/show-ai-limit-toast"
@@ -80,7 +80,7 @@ export function OutcomePortraitControls({
   function handleGenerate() {
     if (!canUseAI) {
       showAiLimitToast({
-        description: "Start the author plan to generate AI portraits.",
+        description: "Start the author plan to generate portraits.",
         onUpgrade,
       })
       return
@@ -109,7 +109,7 @@ export function OutcomePortraitControls({
           payload.error === "AI_LIMIT_REACHED"
         ) {
           showAiLimitToast({
-            description: "Start the author plan to unlock AI portraits.",
+            description: "Start the author plan to unlock portrait generation.",
             onUpgrade,
           })
           return
@@ -152,7 +152,7 @@ export function OutcomePortraitControls({
         <div>
           <p className="text-sm font-medium">Portrait</p>
           <p className="text-xs text-muted-foreground">
-            Upload an image or generate one with AI.
+            Upload an image or generate one from your description.
           </p>
         </div>
         {imageUrl ? (
@@ -210,7 +210,7 @@ export function OutcomePortraitControls({
       {canUseAI ? (
         <div className="space-y-3 border-t border-border/60 pt-4">
           <Field>
-            <FieldLabel htmlFor={`style-${outcomeId}`}>AI art style</FieldLabel>
+            <FieldLabel htmlFor={`style-${outcomeId}`}>Portrait style</FieldLabel>
             <select
               id={`style-${outcomeId}`}
               value={styleId}
@@ -252,7 +252,7 @@ export function OutcomePortraitControls({
             {isGenerating ? (
               <Loader2 className="animate-spin" data-icon="inline-start" />
             ) : (
-              <Sparkles data-icon="inline-start" />
+              <Wand2 data-icon="inline-start" />
             )}
             {isGenerating ? "Generating..." : "Generate portrait"}
           </Button>

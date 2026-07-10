@@ -60,7 +60,7 @@ export async function saveQuizBuilderDraft(
   const access = await getSubscriptionAccessForUser(supabase, userId)
 
   if (!access?.canUseAI) {
-    return { error: "AI trial limit reached. Start the author plan to unlock more AI." }
+    return { error: "Included credits used. Start the author plan to unlock more builder credits." }
   }
 
   if (!isBuilderDraftValid(draft)) {
@@ -90,7 +90,7 @@ export async function saveAiGeneratedQuiz(input: {
   const access = await getSubscriptionAccessForUser(supabase, userId)
 
   if (!access?.canUseAI) {
-    return { error: "AI trial limit reached. Start the author plan to unlock more AI." }
+    return { error: "Included credits used. Start the author plan to unlock more builder credits." }
   }
 
   try {
@@ -119,7 +119,7 @@ export async function applyAiRevisionPatch(
   const access = await getSubscriptionAccessForUser(supabase, userId)
 
   if (!access?.canUseAI) {
-    return { error: "AI revision requires at least one live quiz subscription." }
+    return { error: "Revision requires at least one live quiz subscription." }
   }
 
   const { data: quiz } = await supabase
@@ -137,7 +137,7 @@ export async function applyAiRevisionPatch(
   } catch (error) {
     return {
       error:
-        error instanceof Error ? error.message : "Could not apply AI changes.",
+        error instanceof Error ? error.message : "Could not apply changes.",
     }
   }
 

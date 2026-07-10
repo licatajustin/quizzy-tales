@@ -9,10 +9,10 @@ type ShowAiLimitToastOptions = {
 }
 
 export function showAiLimitToast(options?: ShowAiLimitToastOptions) {
-  toast.error(options?.message ?? "AI limit reached", {
+  toast.error(options?.message ?? "Builder credits used", {
     description:
       options?.description ??
-      `Start the author plan (${LIVE_QUIZ_PRICE_LABEL}/mo) to unlock AI — includes 1 live quiz slot.`,
+      `Start the author plan (${LIVE_QUIZ_PRICE_LABEL}/mo) for more included credits — includes 1 live quiz slot.`,
     duration: 12_000,
     action: options?.onUpgrade
       ? {

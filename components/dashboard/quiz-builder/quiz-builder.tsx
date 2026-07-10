@@ -8,7 +8,7 @@ import {
   Loader2,
   Paperclip,
   Send,
-  Sparkles,
+  Wand2,
 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -269,7 +269,7 @@ export function QuizBuilder() {
           ) {
             showAiLimitToast({
               description:
-                "Your builder progress is saved. Start the author plan to unlock more AI.",
+                "Your builder progress is saved. Start the author plan to unlock more credits.",
               onUpgrade: openUpgradeSheet,
             })
           } else {
@@ -302,7 +302,7 @@ export function QuizBuilder() {
           )
         )
       } catch {
-        toast.error("Could not reach the assistant.")
+        toast.error("Could not reach guided setup.")
         setMessages((current) =>
           current.filter((message) => message.id !== assistantMessageId)
         )
@@ -404,7 +404,7 @@ export function QuizBuilder() {
   return (
     <div className="flex h-[calc(100vh-8rem)] min-h-[640px] flex-col gap-4">
       <Suspense fallback={null}>
-        <CheckoutReturnHandler successMessage="Plan active. You can keep building with AI." />
+        <CheckoutReturnHandler successMessage="Plan active. You can keep building your quiz." />
       </Suspense>
       <div className="flex shrink-0 flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -412,7 +412,7 @@ export function QuizBuilder() {
             Create a quiz
           </h1>
           <p className="text-sm text-muted-foreground">
-            Chat with your assistant — the breakdown updates as you go.
+            Guided setup — the breakdown updates as you go.
           </p>
         </div>
         <Button
@@ -424,7 +424,7 @@ export function QuizBuilder() {
           {isCreating ? (
             <Loader2 className="animate-spin" data-icon="inline-start" />
           ) : (
-            <Sparkles data-icon="inline-start" />
+            <Wand2 data-icon="inline-start" />
           )}
           {isCreating ? "Creating..." : "Create quiz"}
         </Button>
@@ -433,7 +433,7 @@ export function QuizBuilder() {
       <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
         <Card className="flex min-h-0 flex-col overflow-hidden bg-card">
           <CardHeader className="shrink-0 border-b border-border/60 pb-4">
-            <CardTitle className="text-base">Assistant</CardTitle>
+            <CardTitle className="text-base">Guided setup</CardTitle>
             <CardDescription>
               Answer one question at a time — ask for ideas whenever you&apos;re
               stuck.

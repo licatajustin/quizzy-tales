@@ -16,6 +16,7 @@ const SEGMENT_LABELS: Record<string, string> = {
   dashboard: "Dashboard",
   quizzes: "Quizzes",
   new: "New quiz",
+  ai: "Quiz builder",
   preview: "Preview",
   analytics: "Analytics",
   settings: "Settings",

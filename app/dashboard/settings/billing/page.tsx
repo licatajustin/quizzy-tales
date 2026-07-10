@@ -81,7 +81,7 @@ export default async function BillingPage() {
               ? isCanceling
                 ? "Your subscription is cancelled but live quizzes stay up until the end of your billing period."
                 : "Manage your author plan, live quiz slots, and payment details."
-              : `${LIVE_QUIZ_PRICE_LABEL}/month includes 1 live quiz slot and full AI access. Subscribe anytime.`}
+              : `${LIVE_QUIZ_PRICE_LABEL}/month includes 1 live quiz slot and full builder access. Subscribe anytime.`}
           </p>
         </div>
         {isPaid ? (
@@ -117,7 +117,7 @@ export default async function BillingPage() {
                     : "Your live quiz subscription is active."
                 : access.hasActivePlan
                   ? `${access.publishedQuizCount} live · ${access.availableLiveSlots} slot${access.availableLiveSlots === 1 ? "" : "s"} available`
-                  : "Unlimited drafts · subscribe to unlock AI"}
+                  : "Unlimited drafts · subscribe to unlock builder credits"}
             </CardDescription>
           </div>
           <Badge

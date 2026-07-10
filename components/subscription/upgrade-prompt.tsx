@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { Sparkles } from "lucide-react"
+import { BookOpen } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -21,7 +21,7 @@ export function UpgradePrompt({ title, description }: UpgradePromptProps) {
     <Card className="border-primary/20 bg-primary/5">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
-          <Sparkles className="size-4 text-primary" />
+          <BookOpen className="size-4 text-primary" />
           {title}
         </CardTitle>
         <CardDescription>{description}</CardDescription>
