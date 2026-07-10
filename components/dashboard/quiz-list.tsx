@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
   Card,
+  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
@@ -66,16 +67,28 @@ export function QuizList({ quizzes }: QuizListProps) {
   return (
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
       {quizzes.map((quiz) => (
-        <Card key={quiz.id} className="flex flex-col bg-card">
+        <Card key={quiz.id} className="min-w-0 bg-card">
           <CardHeader className="pb-3">
-            <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0">
-                <CardTitle className="truncate text-base">{quiz.quiz_title}</CardTitle>
-                <CardDescription className="truncate">{quiz.book_title}</CardDescription>
-              </div>
+            <CardTitle
+              className="min-w-0 truncate text-base"
+              title={quiz.quiz_title}
+            >
+              {quiz.quiz_title}
+            </CardTitle>
+            <CardDescription
+              className="min-w-0 truncate"
+              title={quiz.book_title}
+            >
+              {quiz.book_title}
+            </CardDescription>
+            <CardAction>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon-sm" aria-label="Quiz actions">
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    aria-label="Quiz actions"
+                  >
                     <MoreHorizontal className="size-4" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -95,7 +108,7 @@ export function QuizList({ quizzes }: QuizListProps) {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-            </div>
+            </CardAction>
           </CardHeader>
           <CardContent className="mt-auto flex items-center justify-between gap-3">
             <Badge variant={quiz.status === "published" ? "default" : "secondary"}>

@@ -44,6 +44,9 @@ export async function POST(request: Request) {
     .eq("id", auth.userId)
     .maybeSingle()
 
+  const characterCount =
+    input.outcomes?.length ?? input.character_count
+
   try {
     const { object } = await generateObject({
       model: TEXT_MODEL,
@@ -51,12 +54,15 @@ export async function POST(request: Request) {
       prompt: buildGenerateQuizPrompt({
         bookTitle: input.book_title,
         synopsis: input.synopsis,
-        characterCount: input.character_count,
+        characterCount,
         quizTitle: input.quiz_title,
+        authorName: input.author_name,
+        authorDisplayName: author?.display_name,
+        outcomes: input.outcomes,
+        bookResearch: input.book_research,
         tone: input.tone,
         questionStyle: input.question_style,
         includeDescriptions: input.include_descriptions,
-        authorDisplayName: author?.display_name,
       }),
     })
 

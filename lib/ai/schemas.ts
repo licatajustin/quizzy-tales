@@ -48,6 +48,9 @@ export type QuizRevisionPatch = z.infer<typeof quizRevisionPatchSchema>
 export const generateQuizRequestSchema = z.object({
   book_title: z.string().min(1),
   synopsis: z.string().min(20),
+  author_name: z.string().optional(),
+  outcomes: z.array(z.string().min(1)).min(2).max(10).optional(),
+  book_research: z.string().optional(),
   character_count: z.number().int().min(3).max(6).default(4),
   quiz_title: z.string().optional(),
   tone: z
@@ -74,4 +77,28 @@ export const generatePortraitRequestSchema = z.object({
     "photoreal-study",
   ]),
   art_direction: z.string().max(500).optional(),
+})
+
+export const bookResearchSchema = z.object({
+  found: z
+    .boolean()
+    .describe(
+      "True when you can provide useful book context from your knowledge or the author's synopsis"
+    ),
+  title: z.string(),
+  authors: z.array(z.string()).optional(),
+  description: z
+    .string()
+    .describe("Plot summary and key details in 2-4 sentences"),
+  genre: z.string().optional(),
+  themes: z.array(z.string()).optional(),
+  main_characters: z.array(z.string()).optional(),
+})
+
+export type BookResearch = z.infer<typeof bookResearchSchema>
+
+export const researchBookRequestSchema = z.object({
+  book_title: z.string().min(1),
+  author_name: z.string().optional(),
+  synopsis: z.string().min(20).optional(),
 })

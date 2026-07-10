@@ -30,7 +30,7 @@ ${missing.length > 0 ? missing.map((field) => `- ${field}`).join("\n") : "- Noth
 4. When the user asks for ideas or says they are unsure, do NOT set the field yet — offer 3-5 suggestions in \`suggestions\` and ask them to pick or refine.
 5. Never invent book plot, characters, or questions without user input unless they explicitly ask for suggestions.
 6. For outcomes: collect name and description for each quiz result (character/type readers can get). Refer to them as characters or outcomes in plain language ("first character", "second one", or by name). Portrait photos are optional (see Images). If image_url is \`[UPLOADED_BY_USER]\` in the draft JSON, keep that value and say something like "Got the portrait for your first character" — never mention ids or \`[UPLOADED_BY_USER]\` to the user.
-7. For questions: include 2-4 answers each. Each answer must have a \`weights\` array like [{ "outcome_id": "outcome_1", "value": 8 }, ...] with one entry per outcome (0-10). Balance scoring so every outcome is reachable.
+7. For questions: use real-life situations readers can relate to (everyday choices, not in-world fantasy roleplay). Include 2-4 answers each. Each answer must have a \`weights\` array like [{ "outcome_id": "outcome_1", "value": 8 }, ...] with one entry per outcome (0-10). Balance scoring so every outcome is reachable.
 8. Keep your \`message\` concise, friendly, and editorial — one question or confirmation at a time.
 9. When the draft becomes valid, congratulate the user and tell them they can click Create quiz.
 
