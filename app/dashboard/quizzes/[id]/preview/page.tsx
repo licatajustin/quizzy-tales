@@ -1,10 +1,15 @@
 import { notFound } from "next/navigation"
+import type { Metadata } from "next"
 
 import { QuizIntroHero } from "@/components/quiz/quiz-intro-hero"
 import { QuizPlayer } from "@/components/quiz/quiz-player"
 import { getDashboardSession } from "@/lib/auth/dashboard-session"
 import { buildPublishedSnapshot } from "@/lib/quiz/published-snapshot"
 import { getQuizDraft } from "@/lib/quiz/queries"
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+}
 
 type PreviewPageProps = {
   params: Promise<{ id: string }>

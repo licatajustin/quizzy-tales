@@ -2,6 +2,7 @@ import Link from "next/link"
 
 import { Separator } from "@/components/ui/separator"
 import { LOGIN_PATH, marketingNavLinks } from "@/components/marketing/content"
+import { PRIVACY_PATH, TERMS_PATH } from "@/lib/seo/site"
 
 const footerLinks = marketingNavLinks.filter((link) => link.href !== "#how-it-works")
 
@@ -23,6 +24,12 @@ export function SiteFooter() {
           ))}
           <Link href={LOGIN_PATH} className="hover:text-foreground">
             Sign in
+          </Link>
+          <Link href={PRIVACY_PATH} className="hover:text-foreground">
+            Privacy
+          </Link>
+          <Link href={TERMS_PATH} className="hover:text-foreground">
+            Terms
           </Link>
         </div>
       </div>

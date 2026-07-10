@@ -6,6 +6,11 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/sonner"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { getSiteUrl } from "@/lib/stripe/env"
+import {
+  DEFAULT_DESCRIPTION,
+  DEFAULT_TITLE,
+  SITE_NAME,
+} from "@/lib/seo/site"
 import { cn } from "@/lib/utils"
 
 const publicSans = Public_Sans({
@@ -19,28 +24,25 @@ const fontMono = Geist_Mono({
 })
 
 const siteUrl = getSiteUrl()
-const defaultTitle = "QuizzyTales — Personality quizzes for authors"
-const defaultDescription =
-  'Create book-themed "Which character are you?" quizzes your readers will share. Built for storytellers, not spreadsheet people.'
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: defaultTitle,
+    default: DEFAULT_TITLE,
     template: "%s | QuizzyTales",
   },
-  description: defaultDescription,
+  description: DEFAULT_DESCRIPTION,
   openGraph: {
     type: "website",
-    siteName: "QuizzyTales",
-    title: defaultTitle,
-    description: defaultDescription,
+    siteName: SITE_NAME,
+    title: DEFAULT_TITLE,
+    description: DEFAULT_DESCRIPTION,
     url: siteUrl,
   },
   twitter: {
     card: "summary_large_image",
-    title: defaultTitle,
-    description: defaultDescription,
+    title: DEFAULT_TITLE,
+    description: DEFAULT_DESCRIPTION,
   },
 }
 

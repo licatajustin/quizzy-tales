@@ -31,5 +31,17 @@ export function getStripeWebhookSecret() {
 }
 
 export function getSiteUrl() {
-  return process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"
+  const raw = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"
+
+  try {
+    const url = new URL(raw)
+
+    if (url.hostname === "quizzytales.com") {
+      url.hostname = "www.quizzytales.com"
+    }
+
+    return url.origin
+  } catch {
+    return raw
+  }
 }

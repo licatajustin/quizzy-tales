@@ -27,7 +27,8 @@ export function HeroSection() {
 
             <div className="space-y-5">
               <h1 className="text-5xl leading-[1.05] tracking-tight text-foreground md:text-6xl lg:text-7xl">
-                The quiz your readers won&apos;t stop sharing
+                Personality quizzes for authors your readers won&apos;t stop
+                sharing
               </h1>
               <p className="max-w-xl text-lg leading-relaxed text-muted-foreground md:text-xl">
                 Create polished &ldquo;Which character are you?&rdquo; quizzes
