@@ -51,6 +51,8 @@ export const generateQuizRequestSchema = z.object({
   author_name: z.string().optional(),
   outcomes: z.array(z.string().min(1)).min(2).max(10).optional(),
   book_research: z.string().optional(),
+  run_book_research: z.boolean().optional(),
+  stream: z.boolean().optional(),
   character_count: z.number().int().min(3).max(6).default(4),
   quiz_title: z.string().optional(),
   tone: z

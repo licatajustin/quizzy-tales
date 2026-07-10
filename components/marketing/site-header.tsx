@@ -1,9 +1,6 @@
-"use client"
-
 import Link from "next/link"
-import { Moon, Sun } from "lucide-react"
-import { useTheme } from "next-themes"
 
+import { ThemeToggle } from "@/components/marketing/theme-toggle"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import {
@@ -17,8 +14,6 @@ type SiteHeaderProps = {
 }
 
 export function SiteHeader({ className }: SiteHeaderProps) {
-  const { resolvedTheme, setTheme } = useTheme()
-
   return (
     <header
       className={cn(
@@ -46,16 +41,7 @@ export function SiteHeader({ className }: SiteHeaderProps) {
       </nav>
 
       <div className="flex items-center gap-1.5 sm:gap-2">
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          className="relative rounded-full"
-          onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
-          aria-label="Toggle theme"
-        >
-          <Sun className="size-4 transition-all dark:scale-0 dark:opacity-0" />
-          <Moon className="absolute size-4 scale-0 opacity-0 transition-all dark:scale-100 dark:opacity-100" />
-        </Button>
+        <ThemeToggle />
         <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex">
           <Link href={LOGIN_PATH}>Sign in</Link>
         </Button>

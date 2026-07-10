@@ -1,11 +1,6 @@
-"use client"
-
 import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { MoreHorizontal, Pencil, Trash2 } from "lucide-react"
-import { toast } from "sonner"
 
-import { deleteQuiz } from "@/app/actions/quizzes"
+import { QuizListActions } from "@/components/dashboard/quiz-list-actions"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -16,36 +11,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import type { QuizRow } from "@/lib/quiz/types"
+import type { QuizListItem } from "@/lib/quiz/types"
 
 type QuizListProps = {
-  quizzes: QuizRow[]
+  quizzes: QuizListItem[]
 }
 
 export function QuizList({ quizzes }: QuizListProps) {
-  const router = useRouter()
-
-  async function handleDelete(quizId: string, title: string) {
-    if (!window.confirm(`Delete "${title}"? This cannot be undone.`)) {
-      return
-    }
-
-    const result = await deleteQuiz(quizId)
-    if (result.error) {
-      toast.error(result.error)
-      return
-    }
-
-    toast.success("Quiz deleted")
-    router.refresh()
-  }
-
   if (quizzes.length === 0) {
     return (
       <Card className="bg-card">
@@ -82,32 +54,7 @@ export function QuizList({ quizzes }: QuizListProps) {
               {quiz.book_title}
             </CardDescription>
             <CardAction>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    aria-label="Quiz actions"
-                  >
-                    <MoreHorizontal className="size-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem asChild>
-                    <Link href={`/dashboard/quizzes/${quiz.id}`}>
-                      <Pencil data-icon="inline-start" />
-                      Edit
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    variant="destructive"
-                    onClick={() => handleDelete(quiz.id, quiz.quiz_title)}
-                  >
-                    <Trash2 data-icon="inline-start" />
-                    Delete
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <QuizListActions quizId={quiz.id} title={quiz.quiz_title} />
             </CardAction>
           </CardHeader>
           <CardContent className="mt-auto flex items-center justify-between gap-3">

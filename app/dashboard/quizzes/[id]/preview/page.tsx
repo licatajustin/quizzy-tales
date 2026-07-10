@@ -1,9 +1,9 @@
-import { notFound, redirect } from "next/navigation"
+import { notFound } from "next/navigation"
 
 import { QuizPlayer } from "@/components/quiz/quiz-player"
+import { getDashboardSession } from "@/lib/auth/dashboard-session"
 import { buildPublishedSnapshot } from "@/lib/quiz/published-snapshot"
 import { getQuizDraft } from "@/lib/quiz/queries"
-import { createClient } from "@/lib/supabase/server"
 
 type PreviewPageProps = {
   params: Promise<{ id: string }>
@@ -11,15 +11,7 @@ type PreviewPageProps = {
 
 export default async function QuizPreviewPage({ params }: PreviewPageProps) {
   const { id } = await params
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    redirect("/auth/login")
-  }
-
+  const { supabase, user } = await getDashboardSession()
   const draft = await getQuizDraft(supabase, id)
 
   if (!draft || draft.quiz.author_id !== user.id) {

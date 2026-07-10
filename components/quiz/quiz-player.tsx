@@ -210,7 +210,8 @@ export function QuizPlayer({
               alt=""
               fill
               className="object-cover"
-              unoptimized
+              sizes="(max-width: 768px) 100vw, 28rem"
+              priority
             />
           </div>
         ) : null}
@@ -257,7 +258,7 @@ export function QuizPlayer({
               alt=""
               fill
               className="object-cover"
-              unoptimized
+              sizes="(max-width: 768px) 80vw, 20rem"
             />
           </div>
         ) : null}

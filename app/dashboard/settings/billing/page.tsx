@@ -1,5 +1,6 @@
 import { CreditCard } from "lucide-react"
 
+import { getDashboardSession } from "@/lib/auth/dashboard-session"
 import { createCustomerPortalSession } from "@/app/actions/stripe"
 import { BillingCheckoutReturn } from "@/components/checkout/checkout-return-handler"
 import { PlanComparison } from "@/components/settings/plan-comparison"
@@ -27,17 +28,9 @@ import {
   getAuthorBillingProfile,
   getSubscriptionAccessForUser,
 } from "@/lib/subscription-server"
-import { createClient } from "@/lib/supabase/server"
 
 export default async function BillingPage() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    return null
-  }
+  const { supabase, user } = await getDashboardSession()
 
   const billingProfile = await getAuthorBillingProfile(supabase, user.id)
 

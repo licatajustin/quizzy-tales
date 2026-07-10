@@ -1,10 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
 
-import { refreshAuthorSubscriptionFromStripe } from "@/lib/billing"
 import { getMonthlyAiUsage } from "@/lib/ai/usage"
 import {
   getSubscriptionAccess,
-  isPaidSubscriptionStatus,
   type AuthorBillingFields,
   type SubscriptionAccess,
 } from "@/lib/subscription"
@@ -66,17 +64,10 @@ export async function getSubscriptionAccessForUser(
   supabase: SupabaseClient,
   userId: string
 ): Promise<SubscriptionAccess | null> {
-  let author = await getAuthorBillingProfile(supabase, userId)
+  const author = await getAuthorBillingProfile(supabase, userId)
 
   if (!author) {
     return null
-  }
-
-  if (
-    author.stripe_customer_id &&
-    !isPaidSubscriptionStatus(author.subscription_status)
-  ) {
-    author = await refreshAuthorSubscriptionFromStripe(userId, author)
   }
 
   const [publishedQuizCount, monthlyUsage] = await Promise.all([

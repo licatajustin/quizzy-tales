@@ -1,6 +1,5 @@
-import { redirect } from "next/navigation"
-
 import { AnalyticsDashboard } from "@/components/analytics/analytics-dashboard"
+import { getDashboardSession } from "@/lib/auth/dashboard-session"
 import {
   getAuthorQuizIds,
   getQuizAnalyticsSummary,
@@ -8,7 +7,6 @@ import {
   outcomeNamesFromSnapshots,
 } from "@/lib/analytics/queries"
 import type { PublishedQuizSnapshot } from "@/lib/quiz/types"
-import { createClient } from "@/lib/supabase/server"
 
 type AnalyticsPageProps = {
   searchParams: Promise<{ quiz?: string }>
@@ -16,14 +14,7 @@ type AnalyticsPageProps = {
 
 export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps) {
   const { quiz: selectedQuizId } = await searchParams
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    redirect("/auth/login")
-  }
+  const { supabase, user } = await getDashboardSession()
 
   const quizzes = await getAuthorQuizIds(supabase, user.id)
   const publishedQuizzes = quizzes.filter((quiz) => quiz.status === "published")

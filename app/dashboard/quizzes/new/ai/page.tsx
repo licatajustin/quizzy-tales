@@ -1,21 +1,24 @@
 import Link from "next/link"
+import dynamic from "next/dynamic"
 import { redirect } from "next/navigation"
 
-import { QuizBuilder } from "@/components/dashboard/quiz-builder/quiz-builder"
 import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
+import { getDashboardSession } from "@/lib/auth/dashboard-session"
 import { getSubscriptionAccessForUser } from "@/lib/subscription-server"
-import { createClient } from "@/lib/supabase/server"
+
+const QuizBuilder = dynamic(
+  () =>
+    import("@/components/dashboard/quiz-builder/quiz-builder").then(
+      (module) => module.QuizBuilder
+    ),
+  {
+    loading: () => <Skeleton className="h-[32rem] w-full rounded-xl" />,
+  }
+)
 
 export default async function ConversationalAiQuizPage() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    redirect("/auth/login")
-  }
-
+  const { supabase, user } = await getDashboardSession()
   const access = await getSubscriptionAccessForUser(supabase, user.id)
 
   if (!access?.canUseAI) {

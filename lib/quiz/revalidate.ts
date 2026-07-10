@@ -1,4 +1,4 @@
-import { revalidatePath } from "next/cache"
+import { revalidatePath, revalidateTag } from "next/cache"
 
 export function revalidateLiveQuizPaths(quizId: string, slug?: string) {
   revalidatePath(`/dashboard/quizzes/${quizId}`)
@@ -6,5 +6,6 @@ export function revalidateLiveQuizPaths(quizId: string, slug?: string) {
 
   if (slug) {
     revalidatePath(`/q/${slug}`)
+    revalidateTag(`quiz-${slug}`, "max")
   }
 }

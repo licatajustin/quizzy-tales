@@ -12,9 +12,7 @@ import {
   quizBuilderChatResponseSchema,
 } from "@/lib/quiz/builder/schemas"
 
-function encodeNdjsonLine(value: unknown) {
-  return `${JSON.stringify(value)}\n`
-}
+import { encodeNdjsonLine } from "@/lib/ai/ndjson"
 
 export async function POST(request: Request) {
   const auth = await requireAiAccessForKind("builder-chat")

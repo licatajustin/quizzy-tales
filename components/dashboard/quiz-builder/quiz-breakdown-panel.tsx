@@ -87,7 +87,8 @@ export function QuizBreakdownPanel({ draft }: QuizBreakdownPanelProps) {
                   alt="Quiz cover"
                   fill
                   className="object-cover"
-                  unoptimized
+                  unoptimized={draft.cover_image_url.startsWith("data:")}
+                  sizes="(max-width: 768px) 100vw, 28rem"
                 />
               </div>
             ) : null}
@@ -118,7 +119,8 @@ export function QuizBreakdownPanel({ draft }: QuizBreakdownPanelProps) {
                             alt={outcome.name || "Outcome"}
                             fill
                             className="object-cover"
-                            unoptimized
+                            unoptimized={outcome.image_url.startsWith("data:")}
+                            sizes="3rem"
                           />
                         </div>
                       ) : (

@@ -1,20 +1,13 @@
 import Link from "next/link"
-import { redirect } from "next/navigation"
 import { Plus } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { QuizList } from "@/components/dashboard/quiz-list"
-import { createClient } from "@/lib/supabase/server"
+import { getDashboardSession } from "@/lib/auth/dashboard-session"
+import { QUIZ_LIST_SELECT } from "@/lib/quiz/types"
 
 export default async function DashboardPage() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    redirect("/auth/login")
-  }
+  const { supabase, user } = await getDashboardSession()
 
   const [{ data: author }, { data: quizzes }] = await Promise.all([
     supabase
@@ -24,7 +17,7 @@ export default async function DashboardPage() {
       .maybeSingle(),
     supabase
       .from("quizzes")
-      .select("*")
+      .select(QUIZ_LIST_SELECT)
       .eq("author_id", user.id)
       .order("updated_at", { ascending: false }),
   ])

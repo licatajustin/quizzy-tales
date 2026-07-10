@@ -1,21 +1,19 @@
-import { redirect } from "next/navigation"
+import type { Metadata } from "next"
 
+import { getDashboardSession } from "@/lib/auth/dashboard-session"
 import { DashboardChrome } from "@/components/dashboard/dashboard-chrome"
-import { createClient } from "@/lib/supabase/server"
+
+export const metadata: Metadata = {
+  title: "Dashboard",
+  robots: { index: false, follow: false },
+}
 
 export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    redirect("/auth/login")
-  }
+  const { supabase, user } = await getDashboardSession()
 
   const { data: author } = await supabase
     .from("authors")

@@ -8,7 +8,9 @@ export async function getQuizDraft(
 ): Promise<QuizDraft | null> {
   const { data: quiz, error: quizError } = await supabase
     .from("quizzes")
-    .select("*")
+    .select(
+      "id, author_id, slug, book_title, quiz_title, cover_image_url, status, published_snapshot, created_at, updated_at"
+    )
     .eq("id", quizId)
     .maybeSingle()
 

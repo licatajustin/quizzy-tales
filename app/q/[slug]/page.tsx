@@ -2,20 +2,20 @@ import { notFound } from "next/navigation"
 import type { Metadata } from "next"
 
 import { QuizPlayer } from "@/components/quiz/quiz-player"
-import { getPublishedQuizBySlug } from "@/lib/quiz/queries"
+import { getPublicQuizBySlug } from "@/lib/quiz/public-quiz"
 import type { PublishedQuizSnapshot } from "@/lib/quiz/types"
-import { createClient } from "@/lib/supabase/server"
 
 type PublicQuizPageProps = {
   params: Promise<{ slug: string }>
 }
 
+export const revalidate = 3600
+
 export async function generateMetadata({
   params,
 }: PublicQuizPageProps): Promise<Metadata> {
   const { slug } = await params
-  const supabase = await createClient()
-  const quiz = await getPublishedQuizBySlug(supabase, slug)
+  const quiz = await getPublicQuizBySlug(slug)
   const snapshot = quiz?.published_snapshot as PublishedQuizSnapshot | null
 
   if (!snapshot) {
@@ -30,8 +30,7 @@ export async function generateMetadata({
 
 export default async function PublicQuizPage({ params }: PublicQuizPageProps) {
   const { slug } = await params
-  const supabase = await createClient()
-  const quiz = await getPublishedQuizBySlug(supabase, slug)
+  const quiz = await getPublicQuizBySlug(slug)
   const snapshot = quiz?.published_snapshot as PublishedQuizSnapshot | null
 
   if (!quiz || !snapshot) {

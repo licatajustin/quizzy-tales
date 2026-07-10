@@ -110,7 +110,7 @@ export function CoverImageControls({
             alt="Quiz cover"
             fill
             className="object-cover"
-            unoptimized
+            sizes="(max-width: 768px) 100vw, 28rem"
           />
         </div>
       ) : null}

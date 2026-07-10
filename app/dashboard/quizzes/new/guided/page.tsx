@@ -1,20 +1,28 @@
 import Link from "next/link"
-import { redirect } from "next/navigation"
+import dynamic from "next/dynamic"
 
-import { GuidedQuizCreator } from "@/components/dashboard/guided-quiz-creator"
 import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
+import { getDashboardSession } from "@/lib/auth/dashboard-session"
 import { getSubscriptionAccessForUser } from "@/lib/subscription-server"
-import { createClient } from "@/lib/supabase/server"
+
+const GuidedQuizCreator = dynamic(
+  () =>
+    import("@/components/dashboard/guided-quiz-creator").then(
+      (module) => module.GuidedQuizCreator
+    ),
+  {
+    loading: () => (
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
+        <Skeleton className="h-96 rounded-xl" />
+        <Skeleton className="h-80 rounded-xl" />
+      </div>
+    ),
+  }
+)
 
 export default async function GuidedNewQuizPage() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    redirect("/auth/login")
-  }
+  const { supabase, user } = await getDashboardSession()
 
   const [{ data: author }, access] = await Promise.all([
     supabase

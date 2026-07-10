@@ -1,5 +1,6 @@
 "use client"
 
+import dynamic from "next/dynamic"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Suspense, useTransition } from "react"
@@ -13,10 +14,8 @@ import {
 } from "@/app/actions/stripe"
 import { CheckoutReturnHandler } from "@/components/checkout/checkout-return-handler"
 import { showAiLimitToast } from "@/lib/ai/show-ai-limit-toast"
-import { AiAssistTab } from "@/components/dashboard/quiz-editor/ai-assist-tab"
 import { DetailsTab } from "@/components/dashboard/quiz-editor/details-tab"
-import { OutcomesTab } from "@/components/dashboard/quiz-editor/outcomes-tab"
-import { QuestionsTab } from "@/components/dashboard/quiz-editor/questions-tab"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -25,6 +24,34 @@ import { validateQuizForPublish } from "@/lib/quiz/published-snapshot"
 import type { QuizDraft } from "@/lib/quiz/types"
 import type { SubscriptionAccess } from "@/lib/subscription"
 import { redirectToStripeCheckout } from "@/lib/stripe/redirect-checkout"
+
+function TabSkeleton() {
+  return <Skeleton className="h-96 w-full rounded-xl" />
+}
+
+const OutcomesTab = dynamic(
+  () =>
+    import("@/components/dashboard/quiz-editor/outcomes-tab").then(
+      (module) => module.OutcomesTab
+    ),
+  { loading: () => <TabSkeleton /> }
+)
+
+const QuestionsTab = dynamic(
+  () =>
+    import("@/components/dashboard/quiz-editor/questions-tab").then(
+      (module) => module.QuestionsTab
+    ),
+  { loading: () => <TabSkeleton /> }
+)
+
+const AiAssistTab = dynamic(
+  () =>
+    import("@/components/dashboard/quiz-editor/ai-assist-tab").then(
+      (module) => module.AiAssistTab
+    ),
+  { loading: () => <TabSkeleton /> }
+)
 
 type QuizEditorProps = {
   draft: QuizDraft

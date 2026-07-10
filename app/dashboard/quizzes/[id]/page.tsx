@@ -1,13 +1,22 @@
-import { notFound, redirect } from "next/navigation"
+import dynamic from "next/dynamic"
+import { notFound } from "next/navigation"
 
-import { QuizEditor } from "@/components/dashboard/quiz-editor/quiz-editor"
+import { getDashboardSession } from "@/lib/auth/dashboard-session"
 import { getQuizDraft } from "@/lib/quiz/queries"
 import {
   buildPublishedSnapshot,
   hasUnpublishedChanges,
 } from "@/lib/quiz/published-snapshot"
 import { getSubscriptionAccessForUser } from "@/lib/subscription-server"
-import { createClient } from "@/lib/supabase/server"
+import QuizEditorLoading from "./loading"
+
+const QuizEditor = dynamic(
+  () =>
+    import("@/components/dashboard/quiz-editor/quiz-editor").then(
+      (module) => module.QuizEditor
+    ),
+  { loading: () => <QuizEditorLoading /> }
+)
 
 type QuizEditorPageProps = {
   params: Promise<{ id: string }>
@@ -15,14 +24,7 @@ type QuizEditorPageProps = {
 
 export default async function QuizEditorPage({ params }: QuizEditorPageProps) {
   const { id } = await params
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    redirect("/auth/login")
-  }
+  const { supabase, user } = await getDashboardSession()
 
   const draft = await getQuizDraft(supabase, id)
 

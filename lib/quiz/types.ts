@@ -26,6 +26,14 @@ export type PublishedQuizSnapshot = {
   published_at: string
 }
 
+export const QUIZ_LIST_SELECT =
+  "id, slug, book_title, quiz_title, status, updated_at" as const
+
+export type QuizListItem = Pick<
+  QuizRow,
+  "id" | "slug" | "book_title" | "quiz_title" | "status" | "updated_at"
+>
+
 export type QuizRow = {
   id: string
   author_id: string

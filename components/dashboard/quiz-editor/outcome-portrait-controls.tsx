@@ -176,7 +176,7 @@ export function OutcomePortraitControls({
             alt="Outcome portrait"
             fill
             className="object-cover"
-            unoptimized
+            sizes="10rem"
           />
         </div>
       ) : null}

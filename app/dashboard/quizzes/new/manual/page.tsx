@@ -1,19 +1,11 @@
 import Link from "next/link"
-import { redirect } from "next/navigation"
 
 import { NewQuizForm } from "@/components/dashboard/new-quiz-form"
 import { Button } from "@/components/ui/button"
-import { createClient } from "@/lib/supabase/server"
+import { getDashboardSession } from "@/lib/auth/dashboard-session"
 
 export default async function ManualNewQuizPage() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    redirect("/auth/login")
-  }
+  await getDashboardSession()
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-8">

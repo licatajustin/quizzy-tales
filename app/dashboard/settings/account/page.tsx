@@ -1,5 +1,6 @@
-import { getAccountDeletionInfo } from "@/app/actions/account"
+import { getAccountDeletionInfo } from "@/lib/account/deletion-info"
 import { DeleteAccountSection } from "@/components/settings/delete-account-section"
+import { getDashboardSession } from "@/lib/auth/dashboard-session"
 import {
   Card,
   CardContent,
@@ -7,25 +8,20 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { createClient } from "@/lib/supabase/server"
 
 export default async function AccountSettingsPage() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { supabase, user } = await getDashboardSession()
 
-  if (!user) {
-    return null
-  }
+  const [authorResult, deletionInfo] = await Promise.all([
+    supabase
+      .from("authors")
+      .select("display_name")
+      .eq("id", user.id)
+      .maybeSingle(),
+    getAccountDeletionInfo(supabase, user),
+  ])
 
-  const { data: author } = await supabase
-    .from("authors")
-    .select("display_name")
-    .eq("id", user.id)
-    .maybeSingle()
-
-  const deletionInfo = await getAccountDeletionInfo()
+  const author = authorResult.data
 
   if ("error" in deletionInfo) {
     return (

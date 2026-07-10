@@ -9,6 +9,7 @@ import { saveAiGeneratedQuiz } from "@/app/actions/ai"
 import { AiQuizPreview } from "@/components/dashboard/ai-quiz-preview"
 import { UpgradePrompt } from "@/components/subscription/upgrade-prompt"
 import { Button } from "@/components/ui/button"
+import { readNdjsonStream } from "@/lib/ai/ndjson"
 import { showAiLimitToast } from "@/lib/ai/show-ai-limit-toast"
 import type { BookResearchResult } from "@/lib/ai/book-research"
 import {
@@ -62,6 +63,7 @@ export function GuidedQuizCreator({
   )
   const [generatedQuiz, setGeneratedQuiz] = useState<GeneratedQuiz | null>(null)
   const [showPreview, setShowPreview] = useState(false)
+  const [statusMessage, setStatusMessage] = useState("")
 
   const isBusy = isWorking
 
@@ -102,47 +104,10 @@ export function GuidedQuizCreator({
     setGeneratedQuiz(null)
     setShowPreview(false)
     setBookResearch(null)
+    setStatusMessage("Starting...")
 
     startWork(async () => {
-      const researchResponse = await fetch("/api/research-book", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          book_title: bookTitle.trim(),
-          author_name: authorName.trim() || undefined,
-          synopsis: synopsis.trim(),
-        }),
-      })
-
-      const researchPayload = (await researchResponse.json()) as {
-        research?: BookResearchResult
-        error?: string
-      }
-
-      if (!researchResponse.ok) {
-        if (
-          researchPayload.error === "SUBSCRIPTION_REQUIRED" ||
-          researchPayload.error === "AI_LIMIT_REACHED"
-        ) {
-          showAiLimitToast({ onUpgrade })
-          return
-        }
-
-        toast.error(researchPayload.error ?? "Could not research book.")
-        return
-      }
-
-      const research = researchPayload.research ?? null
-      setBookResearch(research)
-
-      if (research?.found) {
-        toast.success("Book research ready")
-      } else {
-        toast.message(
-          "Couldn't find extra details — quiz will use your synopsis"
-        )
-      }
-
+      try {
       const outcomes = parseOutcomes(outcomesText)
 
       const response = await fetch("/api/generate-quiz", {
@@ -153,18 +118,18 @@ export function GuidedQuizCreator({
           synopsis: synopsis.trim(),
           author_name: authorName.trim() || undefined,
           outcomes: outcomes.length >= 2 ? outcomes : undefined,
-          book_research: research?.summary,
+          run_book_research: true,
+          stream: true,
           character_count:
             outcomes.length >= 2 ? outcomes.length : undefined,
         }),
       })
 
-      const payload = (await response.json()) as {
-        quiz?: GeneratedQuiz
-        error?: string
-      }
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => ({}))) as {
+          error?: string
+        }
 
-      if (!response.ok || !payload.quiz) {
         if (
           payload.error === "SUBSCRIPTION_REQUIRED" ||
           payload.error === "AI_LIMIT_REACHED"
@@ -177,12 +142,63 @@ export function GuidedQuizCreator({
         return
       }
 
-      setGeneratedQuiz(payload.quiz)
+      const streamResult: {
+        quiz: GeneratedQuiz | null
+        research: BookResearchResult | null
+      } = { quiz: null, research: null }
+
+      type GenerateQuizStreamEvent = {
+        type: "status" | "research" | "partial" | "done" | "error"
+        message?: string
+        research?: BookResearchResult
+        quiz?: GeneratedQuiz
+        error?: string
+      }
+
+      await readNdjsonStream<GenerateQuizStreamEvent>(response, (event) => {
+        if (event.type === "status" && event.message) {
+          setStatusMessage(event.message)
+        }
+
+        if (event.type === "research" && event.research) {
+          streamResult.research = event.research
+          setBookResearch(event.research)
+        }
+
+        if (event.type === "error") {
+          throw new Error(event.error ?? "Could not generate quiz.")
+        }
+
+        if (event.type === "done" && event.quiz) {
+          streamResult.quiz = event.quiz
+          streamResult.research = event.research ?? streamResult.research
+        }
+      })
+
+      if (!streamResult.quiz) {
+        toast.error("Could not generate quiz.")
+        return
+      }
+
+      if (streamResult.research?.found) {
+        toast.success("Book research ready")
+      } else if (streamResult.research) {
+        toast.message(
+          "Couldn't find extra details — quiz will use your synopsis"
+        )
+      }
+
+      setGeneratedQuiz(streamResult.quiz)
       setShowPreview(true)
       if (!slug) {
         setSlug(generateSlug(bookTitle))
       }
       toast.success("Quiz draft ready for review")
+      } catch (error) {
+        toast.error(
+          error instanceof Error ? error.message : "Could not generate quiz."
+        )
+      }
     })
   }
 
@@ -301,7 +317,7 @@ export function GuidedQuizCreator({
                 <Wand2 data-icon="inline-start" />
               )}
               {isWorking
-                ? "Researching book..."
+                ? statusMessage || "Researching book..."
                 : "Generate quiz draft"}
             </Button>
           ) : null}
@@ -378,7 +394,7 @@ export function GuidedQuizCreator({
           <Card className="border-dashed bg-card/60">
             <CardContent className="flex min-h-80 items-center justify-center p-8 text-center text-sm text-muted-foreground">
               {isWorking
-                ? "Researching your book and drafting a quiz..."
+                ? statusMessage || "Researching your book and drafting a quiz..."
                 : "Fill in your book details and generate a draft to preview here."}
             </CardContent>
           </Card>
