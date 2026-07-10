@@ -16,7 +16,12 @@ export function AiQuizPreview({ quiz }: AiQuizPreviewProps) {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold">{quiz.quiz_title}</h3>
+        <h3
+          className="truncate text-lg font-semibold"
+          title={quiz.quiz_title}
+        >
+          {quiz.quiz_title}
+        </h3>
         <p className="text-sm text-muted-foreground">
           {quiz.outcomes.length} outcomes · {quiz.questions.length} questions
         </p>

@@ -10,7 +10,6 @@ import {
 } from "lucide-react"
 
 import { NavMain } from "@/components/dashboard/nav-main"
-import { NavSecondary } from "@/components/dashboard/nav-secondary"
 import { NavUser } from "@/components/dashboard/nav-user"
 import { Button } from "@/components/ui/button"
 import {
@@ -74,8 +73,6 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
             </Button>
           </SidebarGroupContent>
         </SidebarGroup>
-
-        <NavSecondary />
       </SidebarContent>
 
       <SidebarFooter>
