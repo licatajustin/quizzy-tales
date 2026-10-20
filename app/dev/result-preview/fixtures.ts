@@ -13,6 +13,17 @@ const portraitSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 80
 
 export const previewPortraitUrl = `data:image/svg+xml,${encodeURIComponent(portraitSvg)}`
 
+const firePortraitSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800">
+  <rect width="800" height="800" fill="#3a2218"/>
+  <circle cx="400" cy="430" r="250" fill="#e07a3d"/>
+  <path d="M150 220c90 70 80 20 190-30" fill="none" stroke="#f2c14e" stroke-width="16" stroke-linecap="round"/>
+  <path d="M470 160c80 90 70 30 180 10" fill="none" stroke="#f2c14e" stroke-width="14" stroke-linecap="round"/>
+  <circle cx="400" cy="318" r="78" fill="#2b160f"/>
+  <path d="M248 690c28-168 276-168 304 0H248z" fill="#2b160f"/>
+</svg>`
+
+export const firePortraitUrl = `data:image/svg+xml,${encodeURIComponent(firePortraitSvg)}`
+
 export const previewShares: OutcomePointShare[] = [
   { id: "wind", name: "Wind", points: 10, percent: 50 },
   { id: "fire", name: "Fire", points: 6, percent: 30 },
@@ -109,10 +120,30 @@ const fireOutcome: PublishedOutcome = {
   id: "fire",
   name: "Fire",
   sort_order: 1,
-  image_url: null,
+  image_url: firePortraitUrl,
   tagline: "The one who keeps the hearth",
   description: "You arrive with warmth and leave a little smoke.",
-  details: [],
+  details: [
+    {
+      label: "Core",
+      kind: "text",
+      value: "A steady flame people gather around when the night turns cold.",
+    },
+    {
+      label: "How you move",
+      kind: "bullets",
+      value: [
+        "Light the room before you explain",
+        "Stay until the story is warm",
+        "Speak in a voice that carries",
+      ],
+    },
+    {
+      label: "Drawn to",
+      kind: "chips",
+      value: ["Hearths", "Late suppers", "First sparks"],
+    },
+  ],
 }
 
 const waterOutcome: PublishedOutcome = {
@@ -120,7 +151,7 @@ const waterOutcome: PublishedOutcome = {
   name: "Water",
   sort_order: 2,
   image_url: null,
-  tagline: "",
+  tagline: "The one who changes course",
   description: "You take the shape the day asks for.",
   details: [],
 }
@@ -132,12 +163,19 @@ const earthOutcome: PublishedOutcome = {
   image_url: null,
   tagline: "",
   description: "You stay, and the story has somewhere to stand.",
-  details: [],
+  details: [
+    {
+      label: "Keepsake",
+      kind: "text",
+      value: "A stone worn smooth by a pocket and a long walk home.",
+    },
+  ],
 }
 
 export const previewQuiz: PublishedQuizSnapshot = {
   quiz_title: "Which current are you?",
   book_title: "The Open Window",
+  intro_text: "A storm is at the glass. Which current are you?",
   cover_image_url: null,
   published_at: "2026-01-01T00:00:00.000Z",
   outcomes: [windOutcome, fireOutcome, waterOutcome, earthOutcome],
