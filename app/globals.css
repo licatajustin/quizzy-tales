@@ -164,3 +164,9 @@ html[data-quiz-attempt="pending"] .quiz-attempt-placeholder {
 [data-quiz-theme] .quiz-callout :is(p, li, span) {
   color: inherit;
 }
+
+[data-quiz-theme] button.quiz-choice:disabled {
+  color: var(--quiz-option-text);
+  opacity: 1;
+  cursor: not-allowed;
+}

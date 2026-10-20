@@ -162,6 +162,27 @@ const namedOutcomes = [
   { id: "earth", name: "Earth" },
 ]
 
+describe("tallyOutcomeScores", () => {
+  it("adds the full weight of each pick when two answers are selected", () => {
+    const answers = [
+      { id: "a1", weights: { wind: 4, fire: 1 } },
+      { id: "a2", weights: { wind: 3, fire: 6 } },
+    ]
+
+    assert.deepEqual(
+      tallyOutcomeScores(
+        [
+          { id: "wind" },
+          { id: "fire" },
+        ],
+        ["a1", "a2"],
+        answers
+      ),
+      { wind: 7, fire: 7 }
+    )
+  })
+})
+
 describe("outcomePointShares", () => {
   it("uses the same tally and tie-break as the winner", () => {
     const answers = [

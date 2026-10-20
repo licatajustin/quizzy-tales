@@ -27,6 +27,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
+import { MAX_MULTIPLE_SELECTIONS } from "@/lib/quiz/answer-limit"
 import type { AnswerRow, OutcomeRow, QuestionRow } from "@/lib/quiz/types"
 
 type QuestionsTabProps = {
@@ -206,7 +207,8 @@ function QuestionCard({
           <FieldContent>
             <FieldLabel>Allow multiple answers</FieldLabel>
             <FieldDescription>
-              Let readers pick more than one option before continuing.
+              Readers can pick up to {MAX_MULTIPLE_SELECTIONS} answers before
+              continuing.
             </FieldDescription>
           </FieldContent>
           <Switch

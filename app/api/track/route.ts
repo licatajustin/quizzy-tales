@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server"
 
 import { trackPayloadSchema } from "@/lib/analytics/types"
+import {
+  recordTrackedAnswers,
+  type TrackAnswerAdmin,
+} from "@/lib/quiz/track-answer"
 import { createAdminClient } from "@/lib/supabase/admin"
 
 export async function POST(request: Request) {
@@ -68,19 +72,15 @@ export async function POST(request: Request) {
       }
 
       case "answer": {
-        await admin
-          .from("reader_answers")
-          .delete()
-          .eq("session_id", payload.sessionId)
-          .eq("question_id", payload.questionId)
-
-        await admin.from("reader_answers").insert(
-          payload.answerIds.map((answerId) => ({
-            session_id: payload.sessionId,
-            question_id: payload.questionId,
-            answer_id: answerId,
-          }))
+        const recorded = await recordTrackedAnswers(
+          admin as unknown as TrackAnswerAdmin,
+          payload
         )
+
+        if ("error" in recorded) {
+          return NextResponse.json({ error: recorded.error }, { status: 400 })
+        }
+
         break
       }
 
