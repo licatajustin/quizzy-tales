@@ -33,7 +33,9 @@ const generatedQuestionSchema = z.object({
   question_text: z.string(),
   allow_multiple: z
     .boolean()
-    .describe("Whether the reader can select multiple answers"),
+    .describe(
+      "Whether the reader can select up to 2 answers. False means one answer."
+    ),
   answers: z.array(generatedAnswerSchema).min(2).max(6),
 })
 

@@ -1,3 +1,5 @@
+import { trimAnswerIds } from "@/lib/quiz/answer-limit"
+
 export type StoredQuizAttemptState = "playing" | "result"
 
 export type StoredQuizAttempt = {
@@ -154,7 +156,11 @@ export function pickRandomQuestions<T>(
 }
 
 export function selectionForShownQuestions(
-  questions: readonly { id: string; answers: readonly { id: string }[] }[],
+  questions: readonly {
+    id: string
+    allow_multiple?: boolean
+    answers: readonly { id: string }[]
+  }[],
   selectedByQuestion: Record<string, string[]>
 ) {
   const selected: Record<string, string[]> = {}
@@ -169,7 +175,10 @@ export function selectionForShownQuestions(
     }
 
     const allowed = new Set(question.answers.map((answer) => answer.id))
-    const valid = chosen.filter((answerId) => allowed.has(answerId))
+    const valid = trimAnswerIds(
+      chosen.filter((answerId) => allowed.has(answerId)),
+      Boolean(question.allow_multiple)
+    )
     if (valid.length === 0) {
       continue
     }

@@ -58,7 +58,7 @@ ${outcomeProfileInstructions(
 - Questions must use real-life situations readers can relate to — everyday choices about conflict, trust, risk, loyalty, solitude, ambition, etc.
 - Do NOT place the reader inside the book's fictional world. Avoid in-world fantasy scenarios (e.g. "A dragon blocks your path", "You're in the enchanted forest", "The king summons you").
 - Reveal character alignment through how someone acts in ordinary life, not through plot-specific roleplay.
-- Set allow_multiple to false unless the question genuinely supports multiple selections.
+- Set allow_multiple to false unless the question genuinely supports multiple selections. When it is true, readers can choose up to 2 answers.
 - Every answer must include weighted scores (0-10) for EVERY outcome id.
 - Use stable temporary outcome ids like outcome_1, outcome_2, etc.
 - Make scoring balanced so every outcome is reachable with thoughtful answers.
@@ -122,7 +122,7 @@ Keep existing outcome ids (outcome_1, outcome_2, ...) for unchanged characters s
 Each outcome must include tagline and details in the section shape (label, kind, text, items).
 When the instruction does not ask to change result pages, copy each outcome's tagline, description, and details through unchanged.
 When the instruction does change characters or result pages, rewrite the tagline, description, and details so they stay specific to that result.
-Each question must include allow_multiple (true or false).
+Each question must include allow_multiple (true or false). Readers can choose up to 2 answers when it is true.
 Use the same outcome id scheme (outcome_1, outcome_2, ...) and keep weights aligned to those ids.
 Preserve quality: balanced scoring, 2+ answers per question, engaging copy.
 Questions should stay in real-life, relatable situations — not in-world fantasy scenarios from the book.`

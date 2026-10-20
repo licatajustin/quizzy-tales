@@ -133,6 +133,53 @@ export default async function ResultPreviewPage({
   }
 
   const { variant } = await searchParams
+
+  if (variant === "dark-cap") {
+    const snapshot = {
+      ...contrastSnapshot("dark"),
+      questions: [
+        {
+          id: "q-cap",
+          question_text: "Which fae call to you?",
+          allow_multiple: true,
+          sort_order: 0,
+          answers: [
+            {
+              id: "cap-a",
+              answer_text: "The one who watches the threshold",
+              sort_order: 0,
+              weights: { wind: 4, fire: 1, water: 0, earth: 2 },
+            },
+            {
+              id: "cap-b",
+              answer_text: "The one who keeps the hearth",
+              sort_order: 1,
+              weights: { wind: 0, fire: 5, water: 1, earth: 2 },
+            },
+            {
+              id: "cap-c",
+              answer_text: "The one who follows the thorn path",
+              sort_order: 2,
+              weights: { wind: 2, fire: 2, water: 4, earth: 0 },
+            },
+            {
+              id: "cap-d",
+              answer_text: "The one who stays with the stone",
+              sort_order: 3,
+              weights: { wind: 1, fire: 0, water: 1, earth: 6 },
+            },
+          ],
+        },
+      ],
+    }
+
+    return (
+      <QuizThemeScope theme={snapshot.theme} className="min-h-svh bg-background">
+        <QuizPlayer quizId="preview-cap" slug="preview" snapshot={snapshot} />
+      </QuizThemeScope>
+    )
+  }
+
   const contrast = /^(dark|night|custom)-(play|result|share)$/.exec(variant ?? "")
   if (contrast) {
     const snapshot = contrastSnapshot(contrast[1] as "dark" | "night" | "custom")

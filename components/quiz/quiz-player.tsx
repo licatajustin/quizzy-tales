@@ -24,6 +24,10 @@ import {
   getTrackingContext,
   trackEvent,
 } from "@/lib/analytics/client"
+import {
+  MAX_MULTIPLE_SELECTIONS,
+  toggleLimitedSelection,
+} from "@/lib/quiz/answer-limit"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import {
@@ -472,11 +476,16 @@ export function QuizPlayer({
     if (!currentQuestion) return
 
     const previous = selectedByQuestion[currentQuestion.id] ?? []
-    const nextAnswers = currentQuestion.allow_multiple
-      ? previous.includes(answerId)
-        ? previous.filter((id) => id !== answerId)
-        : [...previous, answerId]
-      : [answerId]
+    const nextAnswers = toggleLimitedSelection(
+      previous,
+      answerId,
+      currentQuestion.allow_multiple
+    )
+
+    if (!nextAnswers) {
+      return
+    }
+
     const updated = {
       ...selectedByQuestion,
       [currentQuestion.id]: nextAnswers,
@@ -707,7 +716,7 @@ export function QuizPlayer({
           </h2>
           {currentQuestion.allow_multiple ? (
             <p className="text-sm text-muted-foreground">
-              Choose all that apply
+              Select up to {MAX_MULTIPLE_SELECTIONS} answers
             </p>
           ) : null}
         </div>
@@ -715,13 +724,19 @@ export function QuizPlayer({
         <div className="grid gap-3">
           {currentQuestion.answers.map((answer) => {
             const selected = selectedForCurrent.includes(answer.id)
+            const locked =
+              currentQuestion.allow_multiple &&
+              !selected &&
+              selectedForCurrent.length >= MAX_MULTIPLE_SELECTIONS
             return (
               <button
                 key={answer.id}
                 type="button"
                 aria-pressed={selected}
+                aria-disabled={locked}
+                disabled={locked}
                 onClick={() => toggleAnswer(answer.id)}
-                className={quizChoiceClass(selected, themedChoices)}
+                className={quizChoiceClass(selected, themedChoices, locked)}
               >
                 {answer.answer_text}
               </button>
