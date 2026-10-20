@@ -1,3 +1,7 @@
+# QuizzyTales
+
+Production deploys apply pending files in `supabase/migrations` before the Next.js build. Preview deploys do not. Setup, required Vercel environment variables, and baselining an existing database are documented in [docs/vercel-supabase-migrations.md](docs/vercel-supabase-migrations.md).
+
 # Next.js template
 
 This is a Next.js template with shadcn/ui.
