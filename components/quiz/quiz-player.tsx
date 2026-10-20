@@ -11,6 +11,8 @@ import Image from "next/image"
 import { RotateCcw } from "lucide-react"
 
 import { ExploreOtherResults } from "@/components/quiz/explore-other-results"
+import { quizChoiceClass } from "@/components/quiz/quiz-choice"
+import { useQuizThemeAttrs } from "@/components/quiz/quiz-theme-scope"
 import { QuizAuthorLogo } from "@/components/quiz/quiz-author-logo"
 import { QuizResult } from "@/components/quiz/quiz-result"
 import { QuizResultLinks } from "@/components/quiz/quiz-result-links"
@@ -105,6 +107,7 @@ export function QuizPlayer({
   const advanceTimerRef = useRef<number | null>(null)
   const subsetSessionRef = useRef<SubsetSession | null>(null)
   const trackingEnabled = Boolean(quizId) && !isPreview
+  const themedChoices = Boolean(useQuizThemeAttrs()?.style["--quiz-option"])
 
   const pool = useMemo(
     () =>
@@ -586,7 +589,7 @@ export function QuizPlayer({
                 <p className="text-sm font-medium text-muted-foreground">
                   {snapshot.book_title}
                 </p>
-                <h1 className="text-3xl font-semibold tracking-tight">
+                <h1 className="text-3xl font-semibold tracking-tight text-foreground">
                   {snapshot.quiz_title}
                 </h1>
                 <p className="text-sm text-muted-foreground">
@@ -699,7 +702,7 @@ export function QuizPlayer({
 
       <div className="space-y-6">
         <div className="space-y-2">
-          <h2 className="text-2xl font-semibold tracking-tight">
+          <h2 className="text-2xl font-semibold tracking-tight text-foreground">
             {currentQuestion.question_text}
           </h2>
           {currentQuestion.allow_multiple ? (
@@ -718,12 +721,7 @@ export function QuizPlayer({
                 type="button"
                 aria-pressed={selected}
                 onClick={() => toggleAnswer(answer.id)}
-                className={cn(
-                  "rounded-xl border px-4 py-4 text-left text-sm transition-colors outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
-                  selected
-                    ? "border-primary bg-primary/10"
-                    : "border-border/60 bg-card/40 hover:bg-accent/40"
-                )}
+                className={quizChoiceClass(selected, themedChoices)}
               >
                 {answer.answer_text}
               </button>

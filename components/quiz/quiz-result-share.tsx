@@ -44,7 +44,7 @@ export function QuizResultShare({
           {snapshot.quiz_title}
           <span> · {snapshot.book_title}</span>
         </p>
-        <h1 className="text-3xl font-semibold tracking-tight">
+        <h1 className="text-3xl font-semibold tracking-tight text-foreground">
           {outcome.name}
         </h1>
         {tagline ? (

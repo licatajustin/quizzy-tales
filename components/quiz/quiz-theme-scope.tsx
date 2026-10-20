@@ -3,6 +3,7 @@
 import { createContext, useContext, type ReactNode } from "react"
 
 import { quizThemeAttrs, type QuizThemeAttrs } from "@/lib/quiz/theme-style"
+import { cn } from "@/lib/utils"
 
 const QuizThemeContext = createContext<QuizThemeAttrs | null>(null)
 
@@ -29,7 +30,13 @@ export function QuizThemeScope({
 
   return (
     <QuizThemeContext.Provider value={attrs}>
-      <div className={className} {...attrs}>
+      <div
+        className={cn(
+          attrs["data-quiz-scheme"] && "bg-background text-foreground",
+          className
+        )}
+        {...attrs}
+      >
         {children}
       </div>
     </QuizThemeContext.Provider>

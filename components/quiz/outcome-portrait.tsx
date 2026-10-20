@@ -82,7 +82,7 @@ export function OutcomePortrait({
       <span className="absolute size-2/3 rounded-full bg-white/40 blur-2xl dark:bg-white/10" />
       <span
         className={cn(
-          "relative text-4xl font-semibold tracking-tight text-stone-950/80 dark:text-white",
+          "relative text-4xl font-semibold tracking-tight text-foreground/80",
           initialsClassName
         )}
       >

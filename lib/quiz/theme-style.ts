@@ -1,6 +1,7 @@
 import {
   contrastRatio,
   isDarkHex,
+  meetsWcagAA,
   mixHex,
   readableForeground,
   readableMuted,
@@ -62,48 +63,146 @@ const PRESET_CARDS = {
   night: "#1c2233",
 } as const
 
+export type QuizSurfaceTokens = {
+  background: string
+  text: string
+  muted: string
+  heading: string
+  border: string
+  option: string
+  optionText: string
+  optionHover: string
+  optionHoverText: string
+  optionSelected: string
+  optionSelectedText: string
+  optionSelectedBorder: string
+  buttonText: string
+  ring: string
+  callout: string
+  calloutText: string
+  card: string
+  cardText: string
+  dark: boolean
+}
+
+function textOn(surface: string, preferred: string) {
+  return meetsWcagAA(preferred, surface) ? preferred : readableForeground(surface)
+}
+
+function componentColor(candidate: string, surface: string, fallback: string) {
+  return contrastRatio(candidate, surface) >= 3 ? candidate : fallback
+}
+
+export function deriveQuizSurfaceTokens(
+  background: string,
+  accent: string | null,
+  cardHint?: string
+): QuizSurfaceTokens {
+  const text = readableForeground(background)
+  const dark = isDarkHex(background)
+  const border = mixHex(background, text, dark ? 0.28 : 0.18)
+  const option = mixHex(background, text, dark ? 0.1 : 0.045)
+  const optionText = textOn(option, text)
+  const hoverTint = accent ?? text
+  const optionHover = mixHex(
+    option,
+    hoverTint,
+    accent ? (dark ? 0.22 : 0.14) : dark ? 0.12 : 0.06
+  )
+  const optionHoverText = textOn(optionHover, text)
+  const selectedTint = accent ?? text
+  const optionSelected = mixHex(
+    background,
+    selectedTint,
+    accent ? (dark ? 0.4 : 0.16) : dark ? 0.18 : 0.08
+  )
+  const optionSelectedText = textOn(optionSelected, text)
+  const optionSelectedBorder = accent
+    ? componentColor(accent, optionSelected, text)
+    : border
+  const buttonText = accent ? readableForeground(accent) : text
+  const ring = accent ? componentColor(accent, background, text) : text
+  const callout = mixHex(
+    background,
+    accent ?? text,
+    accent ? (dark ? 0.2 : 0.1) : dark ? 0.12 : 0.05
+  )
+  const card =
+    cardHint ?? (dark ? mixHex(background, text, 0.08) : mixHex(background, "#ffffff", 0.72))
+
+  return {
+    background,
+    text,
+    muted: readableMuted(background, 0.72),
+    heading: text,
+    border,
+    option,
+    optionText,
+    optionHover,
+    optionHoverText,
+    optionSelected,
+    optionSelectedText,
+    optionSelectedBorder,
+    buttonText,
+    ring,
+    callout,
+    calloutText: textOn(callout, text),
+    card,
+    cardText: textOn(card, text),
+    dark,
+  }
+}
+
 function surfacePalette(
   background: string,
   accent: string | null,
   cardHint?: string
 ) {
-  const foreground = readableForeground(background)
-  const dark = isDarkHex(background)
-  const card =
-    cardHint ?? (dark ? mixHex(background, foreground, 0.08) : background)
-  const muted = dark
-    ? mixHex(background, foreground, 0.14)
-    : mixHex(background, foreground, 0.05)
-  const border = mixHex(background, foreground, dark ? 0.24 : 0.16)
-  const hover = accent
-    ? mixHex(background, accent, dark ? 0.22 : 0.12)
-    : mixHex(background, foreground, dark ? 0.16 : 0.08)
+  const tokens = deriveQuizSurfaceTokens(background, accent, cardHint)
+  const mutedSurface = tokens.dark
+    ? mixHex(background, tokens.text, 0.14)
+    : mixHex(background, tokens.text, 0.05)
 
   const style: Record<string, string> = {
-    "--background": background,
-    "--foreground": foreground,
-    "--card": card,
-    "--card-foreground": foreground,
-    "--popover": card,
-    "--popover-foreground": foreground,
-    "--muted": muted,
-    "--muted-foreground": readableMuted(background, 0.72),
-    "--secondary": muted,
-    "--secondary-foreground": foreground,
-    "--accent": hover,
-    "--accent-foreground": foreground,
-    "--border": border,
-    "--input": border,
-    "--ring": accent ?? readableMuted(background, 0.8),
-    colorScheme: dark ? "dark" : "light",
+    "--background": tokens.background,
+    "--foreground": tokens.text,
+    "--card": tokens.card,
+    "--card-foreground": tokens.cardText,
+    "--popover": tokens.card,
+    "--popover-foreground": tokens.cardText,
+    "--muted": mutedSurface,
+    "--muted-foreground": tokens.muted,
+    "--secondary": tokens.option,
+    "--secondary-foreground": tokens.optionText,
+    "--accent": tokens.optionHover,
+    "--accent-foreground": tokens.optionHoverText,
+    "--border": tokens.border,
+    "--input": tokens.option,
+    "--ring": tokens.ring,
+    "--quiz-text": tokens.text,
+    "--quiz-muted": tokens.muted,
+    "--quiz-heading": tokens.heading,
+    "--quiz-border": tokens.border,
+    "--quiz-option": tokens.option,
+    "--quiz-option-text": tokens.optionText,
+    "--quiz-option-hover": tokens.optionHover,
+    "--quiz-option-hover-text": tokens.optionHoverText,
+    "--quiz-option-selected": tokens.optionSelected,
+    "--quiz-option-selected-text": tokens.optionSelectedText,
+    "--quiz-option-selected-border": tokens.optionSelectedBorder,
+    "--quiz-button-text": tokens.buttonText,
+    "--quiz-ring": tokens.ring,
+    "--quiz-callout": tokens.callout,
+    "--quiz-callout-text": tokens.calloutText,
+    colorScheme: tokens.dark ? "dark" : "light",
   }
 
   if (accent) {
     style["--primary"] = accent
-    style["--primary-foreground"] = readableForeground(accent)
+    style["--primary-foreground"] = tokens.buttonText
   }
 
-  return { style, dark }
+  return { style, dark: tokens.dark }
 }
 
 export function quizThemeAttrs(value: unknown): QuizThemeAttrs | null {
@@ -127,9 +226,11 @@ export function quizThemeAttrs(value: unknown): QuizThemeAttrs | null {
     attrs.style = palette.style
     attrs["data-quiz-scheme"] = palette.dark ? "dark" : "light"
   } else if (theme.accent) {
+    const buttonText = readableForeground(theme.accent)
     attrs.style = {
       "--primary": theme.accent,
-      "--primary-foreground": readableForeground(theme.accent),
+      "--primary-foreground": buttonText,
+      "--quiz-button-text": buttonText,
       "--ring": theme.accent,
     }
   }
@@ -164,18 +265,16 @@ export function sharePaintFromTheme(value: unknown): SharePaint {
   const paint: SharePaint = { ...DEFAULT_SHARE_PAINT, sharp }
 
   if (background) {
-    const dark = isDarkHex(background)
+    const tokens = deriveQuizSurfaceTokens(background, accent)
     paint.paper =
       theme.background === "parchment" ? DEFAULT_SHARE_PAPER : paperGradient(background)
-    paint.ink = readableForeground(background)
-    paint.muted = readableMuted(background, 0.7)
+    paint.ink = tokens.text
+    paint.muted = tokens.muted
     paint.faint = readableMuted(background, 0.52)
-    paint.frame = dark
-      ? mixHex(background, paint.ink, 0.35)
+    paint.frame = tokens.dark
+      ? mixHex(background, tokens.text, 0.35)
       : mixHex(background, LIGHT_SURFACE, 0.72)
-    if (contrastRatio(paint.ink, background) < 4.5) {
-      paint.ink = readableForeground(background)
-    }
+    paint.onAccent = tokens.buttonText
   }
 
   if (accent) {

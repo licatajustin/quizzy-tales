@@ -50,7 +50,7 @@ export function QuizIntroHero({
         <p className="text-sm font-medium text-muted-foreground">
           {snapshot.book_title}
         </p>
-        <h1 className="text-3xl font-semibold tracking-tight">
+        <h1 className="text-3xl font-semibold tracking-tight text-foreground">
           {snapshot.quiz_title}
         </h1>
         {intro ? (
