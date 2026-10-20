@@ -9,7 +9,7 @@ import {
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
 const force = process.argv.includes("--force")
-const dbUrl = process.env.SUPABASE_DB_URL
+const dbUrl = process.env.POSTGRES_URL_NON_POOLING
 const plan = planSupabaseMigration({
   vercelEnv: process.env.VERCEL_ENV,
   dbUrl,
@@ -90,6 +90,6 @@ child.on("exit", (code) => {
 
 function childEnvWithoutDatabaseUrl() {
   const env = { ...process.env }
-  delete env.SUPABASE_DB_URL
+  delete env.POSTGRES_URL_NON_POOLING
   return env
 }

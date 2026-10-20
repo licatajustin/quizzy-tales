@@ -31,7 +31,7 @@ describe("planSupabaseMigration", () => {
       dbUrl: "  ",
     })
     assert.equal(plan.action, "fail")
-    assert.match(plan.reason, /SUPABASE_DB_URL/)
+    assert.match(plan.reason, /POSTGRES_URL_NON_POOLING/)
   })
 
   it("migrates production with a session-pooler URL and requires TLS", () => {
@@ -44,6 +44,16 @@ describe("planSupabaseMigration", () => {
     assert.equal(plan.port, "5432")
     assert.match(plan.connectionString, /sslmode=require/)
     assert.match(plan.connectionString, /s3cret%21/)
+  })
+
+  it("drops the Vercel supa param and keeps sslmode", () => {
+    const plan = planSupabaseMigration({
+      vercelEnv: "production",
+      dbUrl: `${sessionUrl}?sslmode=require&supa=base-pooler.x`,
+    })
+    assert.equal(plan.action, "migrate")
+    assert.match(plan.connectionString, /sslmode=require/)
+    assert.doesNotMatch(plan.connectionString, /[?&]supa=/)
   })
 
   it("rejects the transaction pooler and disabled TLS", () => {
@@ -102,7 +112,7 @@ describe("apply-supabase-migrations script", () => {
         env: {
           ...process.env,
           VERCEL_ENV: "preview",
-          SUPABASE_DB_URL: sessionUrl,
+          POSTGRES_URL_NON_POOLING: sessionUrl,
         },
       }
     )
@@ -112,7 +122,7 @@ describe("apply-supabase-migrations script", () => {
     assert.doesNotMatch(`${result.stdout}${result.stderr}`, /s3cret/)
   })
 
-  it("fails a production build when SUPABASE_DB_URL is missing", () => {
+  it("fails a production build when POSTGRES_URL_NON_POOLING is missing", () => {
     const result = spawnSync(
       process.execPath,
       ["scripts/apply-supabase-migrations.mjs"],
@@ -121,12 +131,12 @@ describe("apply-supabase-migrations script", () => {
         env: {
           ...process.env,
           VERCEL_ENV: "production",
-          SUPABASE_DB_URL: "",
+          POSTGRES_URL_NON_POOLING: "",
         },
       }
     )
 
     assert.equal(result.status, 1)
-    assert.match(`${result.stdout}${result.stderr}`, /SUPABASE_DB_URL/)
+    assert.match(`${result.stdout}${result.stderr}`, /POSTGRES_URL_NON_POOLING/)
   })
 })
