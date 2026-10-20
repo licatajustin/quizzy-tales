@@ -40,12 +40,14 @@ import {
 } from "@/lib/quiz/question-subset"
 import { normalizePublishedSnapshot } from "@/lib/quiz/published-snapshot"
 import { snapshotReaderLinks } from "@/lib/quiz/reader-links"
+import { resultSharePath } from "@/lib/quiz/share"
 import { calculateWinningOutcome } from "@/lib/quiz/scoring"
 import type { PublishedQuizSnapshot } from "@/lib/quiz/types"
 import { cn } from "@/lib/utils"
 
 type QuizPlayerProps = {
   quizId?: string
+  slug?: string
   snapshot: PublishedQuizSnapshot
   isPreview?: boolean
   children?: React.ReactNode
@@ -74,6 +76,7 @@ type SubsetSession = {
 
 export function QuizPlayer({
   quizId,
+  slug,
   snapshot: rawSnapshot,
   isPreview = false,
   children,
@@ -609,13 +612,14 @@ export function QuizPlayer({
         </OutcomeResultBody>
 
         <div className="flex flex-wrap justify-center gap-3">
-          {trackingEnabled && quizId ? (
+          {trackingEnabled && quizId && slug ? (
             <QuizShareButton
               quizId={quizId}
               sessionId={sessionId}
               quizTitle={snapshot.quiz_title}
-              bookTitle={snapshot.book_title}
               outcomeName={winningOutcome.name}
+              outcomeTagline={winningOutcome.tagline ?? ""}
+              resultPath={resultSharePath(slug, winningOutcome.id)}
             />
           ) : null}
           <Button

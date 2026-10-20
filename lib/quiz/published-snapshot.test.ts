@@ -14,6 +14,7 @@ function draft(overrides: Partial<QuizRow> = {}): QuizDraft {
     slug: "sample",
     book_title: "Sample Book",
     quiz_title: "Which character are you?",
+    intro_text: null,
     cover_image_url: null,
     book_url: null,
     newsletter_url: null,

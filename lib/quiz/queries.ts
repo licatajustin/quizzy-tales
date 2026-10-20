@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
 
+import { normalizeIntroText } from "@/lib/quiz/intro-text"
 import {
   normalizeOutcomeDetails,
   normalizeTagline,
@@ -13,7 +14,7 @@ export async function getQuizDraft(
   const { data: quiz, error: quizError } = await supabase
     .from("quizzes")
     .select(
-      "id, author_id, slug, book_title, quiz_title, cover_image_url, book_url, newsletter_url, status, random_question_subset, questions_per_attempt, published_snapshot, created_at, updated_at"
+      "id, author_id, slug, book_title, quiz_title, intro_text, cover_image_url, book_url, newsletter_url, status, random_question_subset, questions_per_attempt, published_snapshot, created_at, updated_at"
     )
     .eq("id", quizId)
     .maybeSingle()
@@ -53,6 +54,7 @@ export async function getQuizDraft(
       ...quiz,
       random_question_subset: quiz.random_question_subset ?? false,
       questions_per_attempt: quiz.questions_per_attempt ?? null,
+      intro_text: normalizeIntroText(quiz.intro_text),
       book_url: quiz.book_url ?? null,
       newsletter_url: quiz.newsletter_url ?? null,
     },

@@ -15,6 +15,7 @@ export type PublishedOutcome = {
 export type PublishedQuizSnapshot = {
   quiz_title: string
   book_title: string
+  intro_text?: string | null
   cover_image_url: string | null
   book_url?: string | null
   newsletter_url?: string | null
@@ -51,6 +52,7 @@ export type QuizRow = {
   slug: string
   book_title: string
   quiz_title: string
+  intro_text: string | null
   cover_image_url: string | null
   book_url: string | null
   newsletter_url: string | null

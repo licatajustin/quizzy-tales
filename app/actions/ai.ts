@@ -144,7 +144,7 @@ export async function applyAiRevisionPatch(
   revalidatePath(`/dashboard/quizzes/${quizId}`)
   revalidatePath(`/dashboard/quizzes/${quizId}/preview`)
   if (quiz.slug) {
-    revalidatePath(`/q/${quiz.slug}`)
+    revalidatePath(`/q/${quiz.slug}`, "layout")
   }
 
   return { success: true }

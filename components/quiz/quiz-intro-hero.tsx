@@ -1,5 +1,6 @@
 import Image from "next/image"
 
+import { normalizeIntroText } from "@/lib/quiz/intro-text"
 import { formatQuestionCount } from "@/lib/quiz/question-subset"
 import type { PublishedQuizSnapshot } from "@/lib/quiz/types"
 
@@ -16,6 +17,8 @@ export function QuizIntroHero({
   outcomeCount,
   isPreview = false,
 }: QuizIntroHeroProps) {
+  const intro = normalizeIntroText(snapshot.intro_text)
+
   return (
     <>
       {isPreview ? (
@@ -45,6 +48,11 @@ export function QuizIntroHero({
         <h1 className="text-3xl font-semibold tracking-tight">
           {snapshot.quiz_title}
         </h1>
+        {intro ? (
+          <p className="text-base leading-relaxed text-muted-foreground">
+            {intro}
+          </p>
+        ) : null}
         <p className="text-sm text-muted-foreground">
           {formatQuestionCount(questionCount)} · {outcomeCount} possible results
         </p>

@@ -1,3 +1,4 @@
+import { normalizeIntroText } from "@/lib/quiz/intro-text"
 import {
   normalizeOutcomeDetails,
   normalizeTagline,
@@ -36,6 +37,7 @@ export function buildPublishedSnapshot(
   return {
     quiz_title: draft.quiz.quiz_title,
     book_title: draft.quiz.book_title,
+    intro_text: normalizeIntroText(draft.quiz.intro_text),
     cover_image_url: draft.quiz.cover_image_url,
     book_url: readerLinks.bookUrl,
     newsletter_url: readerLinks.newsletterUrl,
@@ -90,6 +92,7 @@ export function normalizePublishedSnapshot(
 ): PublishedQuizSnapshot {
   return {
     ...snapshot,
+    intro_text: normalizeIntroText(snapshot.intro_text),
     outcomes: snapshot.outcomes.map((outcome) => ({
       ...outcome,
       tagline: normalizeTagline(outcome.tagline),
@@ -102,6 +105,7 @@ function comparableSnapshot(snapshot: PublishedQuizSnapshot) {
   return {
     quiz_title: snapshot.quiz_title,
     book_title: snapshot.book_title,
+    intro_text: normalizeIntroText(snapshot.intro_text),
     cover_image_url: snapshot.cover_image_url,
     ...comparableReaderLinkFields(snapshot),
     outcomes: snapshot.outcomes.map(comparableOutcome),

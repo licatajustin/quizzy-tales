@@ -14,7 +14,7 @@ function revalidateQuizPaths(quizId: string, slug?: string) {
   revalidatePath(`/dashboard/quizzes/${quizId}`)
   revalidatePath(`/dashboard/quizzes/${quizId}/preview`)
   if (slug) {
-    revalidatePath(`/q/${slug}`)
+    revalidatePath(`/q/${slug}`, "layout")
     revalidateTag(`quiz-${slug}`, "max")
   }
 }

@@ -4,36 +4,25 @@ import { useState } from "react"
 import { Check, Share2 } from "lucide-react"
 
 import { trackEvent } from "@/lib/analytics/client"
+import { buildResultShareMessage, buildResultShareText } from "@/lib/quiz/share"
 import { Button } from "@/components/ui/button"
 
 type QuizShareButtonProps = {
   quizId: string
   sessionId: string
   quizTitle: string
-  bookTitle: string
   outcomeName: string
-}
-
-function buildShareMessage({
-  quizTitle,
-  bookTitle,
-  outcomeName,
-  url,
-}: {
-  quizTitle: string
-  bookTitle: string
-  outcomeName: string
-  url: string
-}) {
-  return `I'm ${outcomeName}! Take the "${quizTitle}" quiz from ${bookTitle}.\n${url}`
+  outcomeTagline: string
+  resultPath: string
 }
 
 export function QuizShareButton({
   quizId,
   sessionId,
   quizTitle,
-  bookTitle,
   outcomeName,
+  outcomeTagline,
+  resultPath,
 }: QuizShareButtonProps) {
   const [copied, setCopied] = useState(false)
 
@@ -47,8 +36,12 @@ export function QuizShareButton({
   }
 
   async function handleShare() {
-    const url = window.location.href.split("?")[0]
-    const text = `I'm ${outcomeName}! Take the "${quizTitle}" quiz from ${bookTitle}.`
+    const url = new URL(resultPath, window.location.origin).href
+    const text = buildResultShareText({
+      outcomeName,
+      tagline: outcomeTagline,
+      quizTitle,
+    })
 
     if (typeof navigator.share === "function") {
       try {
@@ -67,24 +60,21 @@ export function QuizShareButton({
     }
 
     try {
-      await navigator.clipboard.writeText(
-        buildShareMessage({ quizTitle, bookTitle, outcomeName, url })
-      )
+      await navigator.clipboard.writeText(buildResultShareMessage(text, url))
       trackShare("copy")
       setCopied(true)
       window.setTimeout(() => setCopied(false), 2000)
     } catch {
-      window.prompt("Copy this link to share your result:", url)
+      window.prompt(
+        "Copy this link to share your result:",
+        buildResultShareMessage(text, url)
+      )
       trackShare("copy")
     }
   }
 
   return (
-    <Button
-      type="button"
-      className="rounded-full"
-      onClick={handleShare}
-    >
+    <Button type="button" className="rounded-full" onClick={handleShare}>
       {copied ? (
         <Check data-icon="inline-start" />
       ) : (

@@ -7,6 +7,7 @@ import { QuizPlayer } from "@/components/quiz/quiz-player"
 import { QuizPublicFooter } from "@/components/quiz/quiz-public-footer"
 import { QuizSeoContent } from "@/components/quiz/quiz-seo-content"
 import { buildQuizPageSchema } from "@/lib/seo/json-ld"
+import { quizPageDescription } from "@/lib/quiz/intro-text"
 import { getPublicQuizBySlug } from "@/lib/quiz/public-quiz"
 import { resolveQuestionsPerAttempt } from "@/lib/quiz/question-subset"
 import type { PublishedQuizSnapshot } from "@/lib/quiz/types"
@@ -22,7 +23,7 @@ function buildQuizMetadata(
   slug: string
 ): Metadata {
   const title = `${snapshot.quiz_title} — ${snapshot.book_title}`
-  const description = `Which character from "${snapshot.book_title}" are you? Take the ${snapshot.quiz_title} quiz.`
+  const description = quizPageDescription(snapshot)
   const url = `/q/${slug}`
   const coverImageUrl = snapshot.cover_image_url
 
@@ -50,7 +51,7 @@ function buildQuizMetadata(
         : {}),
     },
     twitter: {
-      card: coverImageUrl ? "summary_large_image" : "summary",
+      card: "summary_large_image",
       title: snapshot.quiz_title,
       description,
       ...(coverImageUrl ? { images: [coverImageUrl] } : {}),
@@ -90,7 +91,7 @@ export default async function PublicQuizPage({ params }: PublicQuizPageProps) {
     snapshot.questions.length
   )
   const outcomeCount = snapshot.outcomes.length
-  const description = `Which character from "${snapshot.book_title}" are you? Take the ${snapshot.quiz_title} quiz.`
+  const description = quizPageDescription(snapshot)
   const outcomeNames = snapshot.outcomes.map((outcome) => outcome.name)
 
   return (
@@ -104,7 +105,7 @@ export default async function PublicQuizPage({ params }: PublicQuizPageProps) {
           outcomeNames,
         })}
       />
-      <QuizPlayer quizId={quiz.id} snapshot={snapshot}>
+      <QuizPlayer quizId={quiz.id} slug={slug} snapshot={snapshot}>
         <QuizIntroHero
           snapshot={snapshot}
           questionCount={questionCount}
