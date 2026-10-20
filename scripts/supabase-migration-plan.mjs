@@ -25,7 +25,7 @@ export function planSupabaseMigration({
     return {
       action: "fail",
       reason:
-        "Refusing to deploy without applying database migrations. Set SUPABASE_DB_URL on the Vercel project for the Production environment only. See docs/vercel-supabase-migrations.md.",
+        "Refusing to deploy without applying database migrations. POSTGRES_URL_NON_POOLING is not set. The Vercel Supabase integration provides it. See docs/vercel-supabase-migrations.md.",
     }
   }
 
@@ -36,7 +36,7 @@ export function planSupabaseMigration({
     return {
       action: "fail",
       reason:
-        "SUPABASE_DB_URL is not a valid connection URL. Use the percent-encoded Session pooler URI from the Supabase dashboard.",
+        "POSTGRES_URL_NON_POOLING is not a valid connection URL.",
     }
   }
 
@@ -44,7 +44,7 @@ export function planSupabaseMigration({
     return {
       action: "fail",
       reason:
-        "SUPABASE_DB_URL must start with postgres:// or postgresql://.",
+        "POSTGRES_URL_NON_POOLING must start with postgres:// or postgresql://.",
     }
   }
 
@@ -52,14 +52,14 @@ export function planSupabaseMigration({
     return {
       action: "fail",
       reason:
-        "SUPABASE_DB_URL must include a username, password, and host. Percent-encode special characters in the password.",
+        "POSTGRES_URL_NON_POOLING must include a username, password, and host.",
     }
   }
 
   if (parsed.searchParams.get("sslmode") === "disable") {
     return {
       action: "fail",
-      reason: "SUPABASE_DB_URL must not disable TLS. Remove sslmode=disable.",
+      reason: "POSTGRES_URL_NON_POOLING must not disable TLS.",
     }
   }
 
@@ -68,9 +68,13 @@ export function planSupabaseMigration({
     return {
       action: "fail",
       reason:
-        "SUPABASE_DB_URL uses port 6543, the transaction pooler. Migrations need the session pooler or the direct connection, both on port 5432.",
+        "POSTGRES_URL_NON_POOLING uses port 6543, the transaction pooler. Migrations need port 5432.",
     }
   }
+
+  // CLI 2.121 forwards unknown query params as `options=-c supa=...`, and
+  // Postgres rejects that setting. sslmode is a real client setting and stays.
+  parsed.searchParams.delete("supa")
 
   if (!parsed.searchParams.has("sslmode")) {
     parsed.searchParams.set("sslmode", "require")
@@ -82,7 +86,7 @@ export function planSupabaseMigration({
     parsed.hostname.endsWith(".supabase.co")
   ) {
     notes.push(
-      "This is the direct database host. On many Supabase projects it is IPv6-only and unreachable from Vercel. If the connection fails, replace SUPABASE_DB_URL with the session pooler URI (port 5432)."
+      "POSTGRES_URL_NON_POOLING uses the direct host db.*.supabase.co. That host is IPv6-only unless the project has the IPv4 add-on, so the Vercel build may be unable to connect."
     )
   }
 
