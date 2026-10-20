@@ -154,3 +154,13 @@ html[data-quiz-attempt="pending"] .quiz-attempt-placeholder {
 [data-quiz-corners="sharp"]:is([class*="rounded-full"], [class*="rounded-4xl"]) {
   border-radius: 0;
 }
+
+[data-quiz-theme] .quiz-callout {
+  background-color: var(--quiz-callout);
+  border-color: var(--quiz-border);
+  color: var(--quiz-callout-text);
+}
+
+[data-quiz-theme] .quiz-callout :is(p, li, span) {
+  color: inherit;
+}

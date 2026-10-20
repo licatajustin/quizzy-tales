@@ -1,12 +1,17 @@
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 
-import { sharePaintFromTheme, quizThemeAttrs } from "./theme-style.ts"
+import {
+  deriveQuizSurfaceTokens,
+  sharePaintFromTheme,
+  quizThemeAttrs,
+} from "./theme-style.ts"
 import {
   contrastRatio,
   meetsWcagAA,
   readableForeground,
   readableMuted,
+  relativeLuminance,
   themeContrastWarnings,
 } from "./theme-contrast.ts"
 import {
@@ -192,6 +197,127 @@ describe("quiz theme surface", () => {
         String(attrs?.style["--background"])
       ),
       true
+    )
+  })
+
+  it("derives readable tokens for light, dark, parchment, night, and custom colors", () => {
+    const cases = [
+      {
+        name: "light",
+        theme: { background: "light", accent: "#d4b483" },
+        dark: false,
+      },
+      {
+        name: "dark",
+        theme: { background: "dark", accent: "#d4b483" },
+        dark: true,
+      },
+      {
+        name: "parchment",
+        theme: { background: "parchment", accent: "#8c3a4b" },
+        dark: false,
+      },
+      {
+        name: "night",
+        theme: { background: "night", accent: "#d4b483" },
+        dark: true,
+      },
+      {
+        name: "custom dark",
+        theme: {
+          background: "custom",
+          background_color: "#10241c",
+          accent: "#e7c27a",
+        },
+        dark: true,
+      },
+      {
+        name: "custom light",
+        theme: {
+          background: "custom",
+          background_color: "#f6f1e7",
+          accent: "#2a6f8f",
+        },
+        dark: false,
+      },
+    ] as const
+
+    for (const item of cases) {
+      const attrs = quizThemeAttrs(item.theme)
+      assert.ok(attrs, item.name)
+      const style = attrs.style
+      const pairs = [
+        ["--quiz-text", "--background"],
+        ["--quiz-muted", "--background"],
+        ["--quiz-heading", "--background"],
+        ["--quiz-option-text", "--quiz-option"],
+        ["--quiz-option-hover-text", "--quiz-option-hover"],
+        ["--quiz-option-selected-text", "--quiz-option-selected"],
+        ["--quiz-button-text", "--primary"],
+        ["--quiz-callout-text", "--quiz-callout"],
+        ["--foreground", "--background"],
+        ["--card-foreground", "--card"],
+      ] as const
+
+      for (const [foreground, background] of pairs) {
+        assert.equal(
+          meetsWcagAA(String(style[foreground]), String(style[background])),
+          true,
+          `${item.name} ${foreground} on ${background}`
+        )
+      }
+
+      assert.equal(style["--quiz-text"], style["--foreground"])
+      assert.equal(style["--quiz-heading"], style["--quiz-text"])
+      assert.equal(style["--quiz-button-text"], style["--primary-foreground"])
+      assert.equal(attrs["data-quiz-scheme"], item.dark ? "dark" : "light")
+
+      const text = relativeLuminance(String(style["--quiz-text"]))
+      const surface = relativeLuminance(String(style["--background"]))
+      if (item.dark) {
+        assert.ok(text > surface, item.name)
+        assert.notEqual(style["--quiz-text"], "#1c1917")
+      } else {
+        assert.ok(text < surface, item.name)
+        assert.notEqual(style["--quiz-text"], "#fffaf6")
+      }
+
+      const paint = sharePaintFromTheme(item.theme)
+      assert.equal(paint.ink, style["--quiz-text"])
+      assert.equal(
+        meetsWcagAA(paint.ink, String(style["--background"])),
+        true,
+        item.name
+      )
+      assert.equal(
+        meetsWcagAA(paint.onAccent, String(style["--primary"])),
+        true,
+        item.name
+      )
+    }
+  })
+
+  it("flips accent text when the accent cannot hold the page ink", () => {
+    const paleOnNight = deriveQuizSurfaceTokens("#141824", "#f4efe4")
+    assert.equal(meetsWcagAA(paleOnNight.buttonText, "#f4efe4"), true)
+    assert.ok(
+      relativeLuminance(paleOnNight.buttonText) <
+        relativeLuminance("#f4efe4")
+    )
+    assert.equal(
+      meetsWcagAA(paleOnNight.optionSelectedText, paleOnNight.optionSelected),
+      true
+    )
+    assert.equal(
+      meetsWcagAA(paleOnNight.optionHoverText, paleOnNight.optionHover),
+      true
+    )
+
+    const inkOnNight = deriveQuizSurfaceTokens("#141824", "#14120e")
+    assert.equal(meetsWcagAA(inkOnNight.buttonText, "#14120e"), true)
+    assert.ok(
+      relativeLuminance(inkOnNight.buttonText) >
+        relativeLuminance("#14120e")
     )
   })
 

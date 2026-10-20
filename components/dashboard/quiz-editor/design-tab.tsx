@@ -8,8 +8,12 @@ import { updateQuizTheme } from "@/app/actions/quizzes"
 import { ThemeLogoControls } from "@/components/dashboard/quiz-editor/theme-logo-controls"
 import { OutcomeResultBody } from "@/components/quiz/outcome-result-body"
 import { QuizAuthorLogo } from "@/components/quiz/quiz-author-logo"
+import { quizChoiceClass } from "@/components/quiz/quiz-choice"
 import { QuizIntroHero } from "@/components/quiz/quiz-intro-hero"
-import { QuizThemeScope } from "@/components/quiz/quiz-theme-scope"
+import {
+  QuizThemeScope,
+  useQuizThemeAttrs,
+} from "@/components/quiz/quiz-theme-scope"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -526,6 +530,17 @@ export function DesignTab({ quiz, outcomes, questionCount }: DesignTabProps) {
       </Card>
 
       <div className="grid gap-4 lg:grid-cols-2">
+        <PreviewFrame label="Question">
+          <QuizThemeScope
+            theme={appliedTheme}
+            className="bg-background text-foreground"
+          >
+            <QuestionPreview
+              bookTitle={quiz.book_title}
+              questionCount={Math.max(questionCount, 1)}
+            />
+          </QuizThemeScope>
+        </PreviewFrame>
         <PreviewFrame label="Intro">
           <QuizThemeScope
             theme={appliedTheme}
@@ -562,6 +577,43 @@ export function DesignTab({ quiz, outcomes, questionCount }: DesignTabProps) {
           </QuizThemeScope>
         </PreviewFrame>
       </div>
+    </div>
+  )
+}
+
+function QuestionPreview({
+  bookTitle,
+  questionCount,
+}: {
+  bookTitle: string
+  questionCount: number
+}) {
+  const themed = Boolean(useQuizThemeAttrs()?.style["--quiz-option"])
+
+  return (
+    <div className="mx-auto flex max-w-xl flex-col gap-6 px-6 py-10">
+      <div className="flex items-center justify-between text-sm text-muted-foreground">
+        <span>Question 1 of {questionCount}</span>
+        <span>{bookTitle}</span>
+      </div>
+      <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+        Your style is…
+      </h2>
+      <div className="grid gap-3">
+        <button
+          type="button"
+          aria-pressed="true"
+          className={quizChoiceClass(true, themed)}
+        >
+          Clean, modern, with something unexpected.
+        </button>
+        <button type="button" className={quizChoiceClass(false, themed)}>
+          Earthy, timeless, and meaningful.
+        </button>
+      </div>
+      <Button type="button" variant="outline" className="w-fit rounded-full">
+        Back
+      </Button>
     </div>
   )
 }

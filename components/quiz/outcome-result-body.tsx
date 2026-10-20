@@ -40,7 +40,7 @@ function OutcomeDetailCard({
   return (
     <article
       className={cn(
-        "flex h-full flex-col gap-3 rounded-2xl border border-border/60 bg-card px-4 py-4 text-left",
+        "flex h-full flex-col gap-3 rounded-2xl border border-border/60 bg-card px-4 py-4 text-left text-card-foreground",
         span && "sm:col-span-2"
       )}
     >
@@ -59,7 +59,7 @@ function OutcomeDetailCard({
           {section.value.map((item, index) => (
             <li
               key={`${item}-${index}`}
-              className="flex gap-2.5 text-sm leading-relaxed"
+              className="flex gap-2.5 text-sm leading-relaxed text-card-foreground"
             >
               <span
                 aria-hidden
@@ -75,7 +75,7 @@ function OutcomeDetailCard({
           {section.value.map((item, index) => (
             <li
               key={`${item}-${index}`}
-              className="rounded-full border border-border/70 bg-background px-3 py-1 text-sm"
+              className="rounded-full border border-border/70 bg-background px-3 py-1 text-sm text-foreground"
             >
               {item}
             </li>
@@ -160,7 +160,7 @@ export function OutcomeResultBody({
       </div>
 
       {tagline || description ? (
-        <div className="w-full rounded-2xl border border-primary/25 bg-primary/10 px-5 py-4">
+        <div className="quiz-callout w-full rounded-2xl border border-primary/25 bg-primary/10 px-5 py-4 text-foreground">
           {tagline ? (
             <p className="text-lg leading-snug font-medium text-balance text-foreground">
               {tagline}
