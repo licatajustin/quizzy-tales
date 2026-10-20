@@ -50,7 +50,7 @@ function pointsFor(answer: WeightedAnswer | undefined, outcomeId: string) {
  * more of the remaining outcomes strictly outscore the others on it.
  */
 function narrowTiedByRecency(
-  tied: readonly OutcomeRow[],
+  tied: readonly { id: string }[],
   selectedAnswerIds: readonly string[],
   answersById: ReadonlyMap<string, WeightedAnswer>
 ) {
@@ -89,7 +89,7 @@ function narrowTiedByRecency(
   return remaining
 }
 
-function pickSeededOutcome(tied: readonly OutcomeRow[], seed: string) {
+function pickSeededOutcome(tied: readonly { id: string }[], seed: string) {
   let winner = tied[0]
   let winnerRank = hashAttemptSeed(`${seed}\u0000${winner.id}`)
 
