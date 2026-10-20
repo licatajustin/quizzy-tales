@@ -1,4 +1,6 @@
 import { Geist_Mono, Public_Sans } from "next/font/google"
+
+import { quizFontVariables } from "@/lib/quiz/theme-fonts"
 import type { Metadata } from "next"
 import { Analytics } from "@vercel/analytics/next"
 
@@ -58,7 +60,8 @@ export default function RootLayout({
         "antialiased",
         fontMono.variable,
         "font-sans",
-        publicSans.variable
+        publicSans.variable,
+        quizFontVariables
       )}
     >
       <body>

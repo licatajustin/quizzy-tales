@@ -3,6 +3,7 @@ import { notFound } from "next/navigation"
 
 import { QuizPublicFooter } from "@/components/quiz/quiz-public-footer"
 import { QuizResultShare } from "@/components/quiz/quiz-result-share"
+import { QuizThemeScope } from "@/components/quiz/quiz-theme-scope"
 import { getPublishedOutcomeShare } from "@/lib/quiz/public-outcome"
 import { resultPageDescription, resultSharePath } from "@/lib/quiz/share"
 
@@ -60,13 +61,16 @@ export default async function SharedResultPage({
   }
 
   return (
-    <div className="min-h-svh bg-background">
+    <QuizThemeScope
+      theme={share.snapshot.theme}
+      className="min-h-svh bg-background"
+    >
       <QuizResultShare
         slug={slug}
         snapshot={share.snapshot}
         outcome={share.outcome}
       />
       <QuizPublicFooter />
-    </div>
+    </QuizThemeScope>
   )
 }

@@ -16,6 +16,7 @@ import {
   visibleOutcomeDetails,
 } from "./outcome-details.ts"
 import type { QuizDraft } from "./types.ts"
+import { EMPTY_QUIZ_THEME } from "./theme.ts"
 
 function draft(overrides: Partial<QuizDraft> = {}): QuizDraft {
   const base: QuizDraft = {
@@ -32,6 +33,7 @@ function draft(overrides: Partial<QuizDraft> = {}): QuizDraft {
       status: "draft",
       random_question_subset: false,
       questions_per_attempt: null,
+      theme: EMPTY_QUIZ_THEME,
       published_snapshot: null,
       created_at: "2026-01-01T00:00:00.000Z",
       updated_at: "2026-01-01T00:00:00.000Z",

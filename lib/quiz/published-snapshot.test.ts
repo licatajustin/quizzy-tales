@@ -6,6 +6,7 @@ import {
   hasUnpublishedChanges,
 } from "./published-snapshot.ts"
 import type { PublishedQuizSnapshot, QuizDraft, QuizRow } from "./types.ts"
+import { EMPTY_QUIZ_THEME } from "./theme.ts"
 
 function draft(overrides: Partial<QuizRow> = {}): QuizDraft {
   const quiz: QuizRow = {
@@ -21,6 +22,7 @@ function draft(overrides: Partial<QuizRow> = {}): QuizDraft {
     status: "published",
     random_question_subset: false,
     questions_per_attempt: null,
+    theme: EMPTY_QUIZ_THEME,
     published_snapshot: null,
     created_at: "2026-10-20T00:00:00.000Z",
     updated_at: "2026-10-20T00:00:00.000Z",
@@ -144,6 +146,61 @@ describe("hasUnpublishedChanges reader links", () => {
       authorDisplayName: "Ada Quinn",
     })
     const next = buildPublishedSnapshot(draft())
+    const quiz = draft({ published_snapshot: published }).quiz
+
+    assert.equal(hasUnpublishedChanges(quiz, next), false)
+  })
+})
+
+describe("published snapshot theme", () => {
+  it("includes a normalized theme and ignores invalid values", () => {
+    const snapshot = buildPublishedSnapshot(
+      draft({
+        theme: {
+          ...EMPTY_QUIZ_THEME,
+          accent: "#C8962E",
+          background: "custom",
+          font: "serif",
+        },
+      })
+    )
+
+    assert.equal(snapshot.theme?.accent, "#c8962e")
+    assert.equal(snapshot.theme?.background, null)
+    assert.equal(snapshot.theme?.font, "serif")
+  })
+
+  it("does not flag an older snapshot that has no theme", () => {
+    const next = buildPublishedSnapshot(draft())
+    const published = { ...next }
+    delete published.theme
+    const quiz = draft({ published_snapshot: published }).quiz
+
+    assert.equal(hasUnpublishedChanges(quiz, next), false)
+  })
+
+  it("flags a theme edit that is not live yet", () => {
+    const published = buildPublishedSnapshot(draft())
+    const next = buildPublishedSnapshot(
+      draft({
+        theme: {
+          ...EMPTY_QUIZ_THEME,
+          background: "night",
+          accent: "#d4b483",
+        },
+      })
+    )
+    const quiz = draft({ published_snapshot: published }).quiz
+
+    assert.equal(hasUnpublishedChanges(quiz, next), true)
+  })
+
+  it("treats an explicit default font as the standard theme", () => {
+    const next = buildPublishedSnapshot(draft())
+    const published = {
+      ...next,
+      theme: { ...EMPTY_QUIZ_THEME, font: "default" as unknown as null },
+    }
     const quiz = draft({ published_snapshot: published }).quiz
 
     assert.equal(hasUnpublishedChanges(quiz, next), false)

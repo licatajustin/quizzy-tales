@@ -2,6 +2,7 @@ import type { ReactNode } from "react"
 
 import { OutcomeMix } from "@/components/quiz/outcome-mix"
 import { OutcomeResultBody } from "@/components/quiz/outcome-result-body"
+import { QuizAuthorLogo } from "@/components/quiz/quiz-author-logo"
 import type { OutcomePointShare } from "@/lib/quiz/scoring"
 import type { PublishedOutcome } from "@/lib/quiz/types"
 
@@ -19,6 +20,8 @@ type QuizResultProps = {
   resultShare?: ReactNode
   /** Book and newsletter links, rendered after share and retake. */
   afterActions?: ReactNode
+  logoUrl?: string | null
+  logoAlt?: string
 }
 
 export function QuizResult({
@@ -30,9 +33,12 @@ export function QuizResult({
   exploreResults,
   resultShare,
   afterActions,
+  logoUrl,
+  logoAlt = "Author logo",
 }: QuizResultProps) {
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-10 px-6 py-12">
+      <QuizAuthorLogo logoUrl={logoUrl} alt={logoAlt} />
       <div data-slot="quiz-result-profile" className="flex flex-col gap-8">
         <OutcomeResultBody outcome={outcome} quizTitle={quizTitle} />
         <OutcomeMix shares={shares} />

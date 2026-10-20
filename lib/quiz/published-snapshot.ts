@@ -3,6 +3,7 @@ import {
   normalizeOutcomeDetails,
   normalizeTagline,
 } from "@/lib/quiz/outcome-details"
+import { normalizeQuizTheme } from "@/lib/quiz/theme"
 import {
   comparableReaderLinkFields,
   snapshotReaderLinks,
@@ -42,6 +43,7 @@ export function buildPublishedSnapshot(
     book_url: readerLinks.bookUrl,
     newsletter_url: readerLinks.newsletterUrl,
     author_display_name: readerLinks.authorDisplayName,
+    theme: normalizeQuizTheme(draft.quiz.theme),
     outcomes: [...draft.outcomes]
       .sort((a, b) => a.sort_order - b.sort_order)
       .map((outcome) => ({
@@ -93,6 +95,7 @@ export function normalizePublishedSnapshot(
   return {
     ...snapshot,
     intro_text: normalizeIntroText(snapshot.intro_text),
+    theme: normalizeQuizTheme(snapshot.theme),
     outcomes: snapshot.outcomes.map((outcome) => ({
       ...outcome,
       tagline: normalizeTagline(outcome.tagline),
@@ -112,6 +115,7 @@ function comparableSnapshot(snapshot: PublishedQuizSnapshot) {
     questions: snapshot.questions,
     random_question_subset: snapshot.random_question_subset ?? false,
     questions_per_attempt: snapshot.questions_per_attempt ?? null,
+    theme: normalizeQuizTheme(snapshot.theme),
   }
 }
 

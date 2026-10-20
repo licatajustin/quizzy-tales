@@ -2,16 +2,15 @@ import { createElement, type CSSProperties, type ReactNode } from "react"
 import sharp from "sharp"
 
 import { clipShareText, isShareImageUrl } from "@/lib/quiz/share"
+import { normalizeQuizTheme } from "@/lib/quiz/theme"
+import {
+  sharePaintFromTheme,
+  type SharePaint,
+} from "@/lib/quiz/theme-style"
 
 export const SHARE_IMAGE_SIZE = { width: 1200, height: 630 } as const
 export const SHARE_IMAGE_CONTENT_TYPE = "image/png"
 
-const PAPER = "linear-gradient(145deg, #f7f3ee 0%, #efe8df 48%, #e8dcc8 100%)"
-const INK = "#2c2419"
-const MUTED = "#5c4f3d"
-const FAINT = "#7a6a55"
-const GOLD = "#d4a853"
-const FONT = "Georgia, serif"
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024
 
 function flex(style: CSSProperties, children?: ReactNode) {
@@ -30,6 +29,10 @@ function textSize(value: string, large: number, medium: number, small: number) {
     return medium
   }
   return large
+}
+
+function radius(paint: SharePaint, value: number) {
+  return paint.sharp ? 0 : value
 }
 
 async function readImageBytes(url: string) {
@@ -92,7 +95,12 @@ export async function loadShareImage(
   }
 }
 
-function portrait(src: string, size: number, marginRight: number) {
+function portrait(
+  src: string,
+  size: number,
+  marginRight: number,
+  paint: SharePaint
+) {
   return createElement("img", {
     src,
     width: size,
@@ -101,23 +109,23 @@ function portrait(src: string, size: number, marginRight: number) {
     style: {
       width: size,
       height: size,
-      borderRadius: size / 2,
+      borderRadius: radius(paint, size / 2),
       objectFit: "cover",
       marginRight,
-      border: "4px solid #fffaf3",
+      border: `4px solid ${paint.frame}`,
     },
   })
 }
 
-function brandMark() {
-  return flex({ alignItems: "center", fontFamily: FONT }, [
+function brandMark(paint: SharePaint, font: string) {
+  return flex({ alignItems: "center", fontFamily: font }, [
     flex(
       {
         width: 44,
         height: 44,
-        borderRadius: 12,
-        background: GOLD,
-        color: INK,
+        borderRadius: radius(paint, 12),
+        background: paint.accent,
+        color: paint.onAccent,
         alignItems: "center",
         justifyContent: "center",
         fontSize: 22,
@@ -126,18 +134,48 @@ function brandMark() {
       },
       "Q"
     ),
-    flex({ fontSize: 28, color: INK }, "QuizzyTales"),
+    flex({ fontSize: 28, color: paint.ink }, "QuizzyTales"),
   ])
+}
+
+async function loadLogo(theme: unknown) {
+  const logoUrl = normalizeQuizTheme(theme).logo_url
+  if (!logoUrl || !isShareImageUrl(logoUrl)) {
+    return null
+  }
+
+  return loadShareImage(logoUrl, 560, 144)
+}
+
+function logoMark(src: string, paint: SharePaint) {
+  return createElement("img", {
+    src,
+    width: 280,
+    height: 72,
+    alt: "",
+    style: {
+      width: 280,
+      height: 72,
+      objectFit: "contain",
+      objectPosition: "left",
+      borderRadius: radius(paint, 8),
+    },
+  })
 }
 
 export async function buildQuizCollageCard(input: {
   quizTitle: string
   bookTitle: string
   portraitUrls: string[]
+  theme?: unknown
+  fontFamily?: string | null
 }) {
-  const loaded = await Promise.all(
-    input.portraitUrls.map((url) => loadShareImage(url, 320, 320))
-  )
+  const paint = sharePaintFromTheme(input.theme)
+  const font = input.fontFamily?.trim() || paint.font
+  const [loaded, logoSrc] = await Promise.all([
+    Promise.all(input.portraitUrls.map((url) => loadShareImage(url, 320, 320))),
+    loadLogo(input.theme),
+  ])
   const portraits = loaded.filter((src): src is string => Boolean(src))
   const book = clipShareText(input.bookTitle, 70)
   const title = clipShareText(input.quizTitle, 80)
@@ -149,20 +187,20 @@ export async function buildQuizCollageCard(input: {
       flexDirection: "column",
       justifyContent: "space-between",
       padding: "64px",
-      background: PAPER,
-      color: INK,
-      fontFamily: FONT,
+      background: paint.paper,
+      color: paint.ink,
+      fontFamily: font,
     },
     [
-      brandMark(),
+      logoSrc ? logoMark(logoSrc, paint) : brandMark(paint, font),
       flex({ flexDirection: "column", width: 1040 }, [
-        flex({ fontSize: 28, color: MUTED, marginBottom: 18 }, book),
+        flex({ fontSize: 28, color: paint.muted, marginBottom: 18 }, book),
         flex(
           {
             fontSize: textSize(title, 64, 52, 42),
             lineHeight: 1.08,
             letterSpacing: "-0.03em",
-            color: INK,
+            color: paint.ink,
           },
           title
         ),
@@ -171,10 +209,10 @@ export async function buildQuizCollageCard(input: {
         ? flex(
             { alignItems: "center" },
             portraits.map((src, index) =>
-              portrait(src, 148, index === portraits.length - 1 ? 0 : 18)
+              portrait(src, 148, index === portraits.length - 1 ? 0 : 18, paint)
             )
           )
-        : flex({ fontSize: 22, color: FAINT }, "quizzytales.com"),
+        : flex({ fontSize: 22, color: paint.faint }, "quizzytales.com"),
     ]
   )
 }
@@ -189,14 +227,20 @@ export async function buildOutcomeShareCard(input: {
   quizTitle: string
   bookTitle: string
   portraitUrl: string | null
+  theme?: unknown
+  fontFamily?: string | null
 }) {
-  const portraitSrc = input.portraitUrl
-    ? await loadShareImage(input.portraitUrl, 800, 900)
-    : null
+  const paint = sharePaintFromTheme(input.theme)
+  const font = input.fontFamily?.trim() || paint.font
+  const [portraitSrc, logoSrc] = await Promise.all([
+    input.portraitUrl ? loadShareImage(input.portraitUrl, 800, 900) : null,
+    loadLogo(input.theme),
+  ])
   const name = clipShareText(input.outcomeName, 42)
   const tagline = clipShareText(input.tagline, 110)
   const book = clipShareText(input.bookTitle, 48)
   const quiz = clipShareText(input.quizTitle, 70)
+  const frameRadius = radius(paint, 28)
 
   const portraitBox = portraitSrc
     ? createElement("img", {
@@ -208,21 +252,21 @@ export async function buildOutcomeShareCard(input: {
           width: 470,
           height: 534,
           objectFit: "cover",
-          borderRadius: 28,
+          borderRadius: frameRadius,
         },
       })
     : flex(
         {
           width: 470,
           height: 534,
-          borderRadius: 28,
-          background: GOLD,
-          color: INK,
+          borderRadius: frameRadius,
+          background: paint.accent,
+          color: paint.onAccent,
           alignItems: "center",
           justifyContent: "center",
           fontSize: 160,
           fontWeight: 700,
-          fontFamily: FONT,
+          fontFamily: font,
         },
         initial(name)
       )
@@ -232,9 +276,9 @@ export async function buildOutcomeShareCard(input: {
       width: "100%",
       height: "100%",
       padding: "48px",
-      background: PAPER,
-      color: INK,
-      fontFamily: FONT,
+      background: paint.paper,
+      color: paint.ink,
+      fontFamily: font,
     },
     [
       portraitBox,
@@ -248,8 +292,23 @@ export async function buildOutcomeShareCard(input: {
         },
         [
           flex({ flexDirection: "column" }, [
-            flex({ fontSize: 26, color: MUTED, marginBottom: 10 }, book),
-            flex({ fontSize: 22, color: FAINT }, "QuizzyTales"),
+            logoSrc
+              ? createElement("img", {
+                  src: logoSrc,
+                  width: 220,
+                  height: 56,
+                  alt: "",
+                  style: {
+                    width: 220,
+                    height: 56,
+                    objectFit: "contain",
+                    objectPosition: "left",
+                    marginBottom: 12,
+                  },
+                })
+              : null,
+            flex({ fontSize: 26, color: paint.muted, marginBottom: 10 }, book),
+            flex({ fontSize: 22, color: paint.faint }, "QuizzyTales"),
           ]),
           flex({ flexDirection: "column", width: 586 }, [
             flex(
@@ -257,17 +316,20 @@ export async function buildOutcomeShareCard(input: {
                 fontSize: textSize(name, 68, 54, 44),
                 lineHeight: 1.05,
                 letterSpacing: "-0.03em",
-                color: INK,
+                color: paint.ink,
                 marginBottom: tagline ? 18 : 0,
               },
               name
             ),
             tagline
-              ? flex({ fontSize: 30, lineHeight: 1.25, color: MUTED }, tagline)
+              ? flex(
+                  { fontSize: 30, lineHeight: 1.25, color: paint.muted },
+                  tagline
+                )
               : null,
           ]),
           flex(
-            { fontSize: 28, lineHeight: 1.25, color: INK, width: 586 },
+            { fontSize: 28, lineHeight: 1.25, color: paint.ink, width: 586 },
             quiz
           ),
         ]

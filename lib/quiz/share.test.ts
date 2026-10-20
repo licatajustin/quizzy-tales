@@ -266,5 +266,20 @@ describe("share images", () => {
     assert.doesNotMatch(textOf(plain), /the quiet one/)
     const plainPng = await renderPng(plain)
     assert.equal(plainPng.subarray(0, 8).toString("hex"), PNG_SIGNATURE)
+
+    const themed = await buildQuizCollageCard({
+      quizTitle: "Which fae are you?",
+      bookTitle: "The Winter Court",
+      portraitUrls: [],
+      theme: {
+        accent: "#d4b483",
+        background: "night",
+        font: "story",
+        corners: "sharp",
+      },
+    })
+    assert.match(textOf(themed), /Which fae are you\?/)
+    const themedPng = await renderPng(themed)
+    assert.equal(themedPng.subarray(0, 8).toString("hex"), PNG_SIGNATURE)
   })
 })

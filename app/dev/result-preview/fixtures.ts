@@ -1,5 +1,6 @@
 import type { OutcomePointShare } from "@/lib/quiz/scoring"
 import type { PublishedOutcome, PublishedQuizSnapshot } from "@/lib/quiz/types"
+import { EMPTY_QUIZ_THEME } from "@/lib/quiz/theme"
 
 const portraitSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800">
   <rect width="800" height="800" fill="#f4efe4"/>
@@ -227,4 +228,23 @@ export const restoreQuiz: PublishedQuizSnapshot = {
   ...previewQuiz,
   random_question_subset: true,
   questions_per_attempt: 1,
+}
+
+const faeMark = `<svg xmlns="http://www.w3.org/2000/svg" width="280" height="72" viewBox="0 0 280 72"><text x="0" y="52" fill="#f4efe4" font-family="Georgia" font-size="44">Fae Court</text></svg>`
+
+export const faeLogoUrl = `data:image/svg+xml,${encodeURIComponent(faeMark)}`
+
+export const themedQuiz: PublishedQuizSnapshot = {
+  ...previewQuiz,
+  quiz_title: "Which Fae Are You?",
+  book_title: "The Fae Court",
+  intro_text: "The court is watching. Which fae answers when you speak your name?",
+  theme: {
+    ...EMPTY_QUIZ_THEME,
+    accent: "#d4b483",
+    background: "night",
+    font: "story",
+    corners: "sharp",
+    logo_url: faeLogoUrl,
+  },
 }
