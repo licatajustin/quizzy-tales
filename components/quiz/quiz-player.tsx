@@ -10,6 +10,7 @@ import {
 import Image from "next/image"
 import { RotateCcw } from "lucide-react"
 
+import { QuizResultLinks } from "@/components/quiz/quiz-result-links"
 import { QuizShareButton } from "@/components/quiz/quiz-share-button"
 
 import {
@@ -34,6 +35,7 @@ import {
   subscribeAttemptStorage,
   writeStoredQuizAttempt,
 } from "@/lib/quiz/question-subset"
+import { snapshotReaderLinks } from "@/lib/quiz/reader-links"
 import { calculateWinningOutcome } from "@/lib/quiz/scoring"
 import type { PublishedQuizSnapshot } from "@/lib/quiz/types"
 import { cn } from "@/lib/utils"
@@ -552,6 +554,22 @@ export function QuizPlayer({
             Retake quiz
           </Button>
         </div>
+
+        <QuizResultLinks
+          bookTitle={snapshot.book_title}
+          {...snapshotReaderLinks(snapshot)}
+          onBookClick={() => {
+            if (!trackingEnabled || !quizId) {
+              return
+            }
+
+            trackEvent({
+              event: "book_cta_click",
+              quizId,
+              sessionId,
+            })
+          }}
+        />
       </div>
     )
   }

@@ -1,3 +1,7 @@
+import {
+  comparableReaderLinkFields,
+  snapshotReaderLinks,
+} from "@/lib/quiz/reader-links"
 import type {
   AnswerRow,
   PublishedQuizSnapshot,
@@ -6,7 +10,8 @@ import type {
 } from "@/lib/quiz/types"
 
 export function buildPublishedSnapshot(
-  draft: QuizDraft
+  draft: QuizDraft,
+  extras?: { authorDisplayName?: string | null }
 ): PublishedQuizSnapshot {
   const answersByQuestion = draft.answers.reduce<Record<string, AnswerRow[]>>(
     (acc, answer) => {
@@ -17,10 +22,19 @@ export function buildPublishedSnapshot(
     {}
   )
 
+  const readerLinks = snapshotReaderLinks({
+    book_url: draft.quiz.book_url,
+    newsletter_url: draft.quiz.newsletter_url,
+    author_display_name: extras?.authorDisplayName,
+  })
+
   return {
     quiz_title: draft.quiz.quiz_title,
     book_title: draft.quiz.book_title,
     cover_image_url: draft.quiz.cover_image_url,
+    book_url: readerLinks.bookUrl,
+    newsletter_url: readerLinks.newsletterUrl,
+    author_display_name: readerLinks.authorDisplayName,
     outcomes: [...draft.outcomes]
       .sort((a, b) => a.sort_order - b.sort_order)
       .map((outcome) => ({
@@ -57,6 +71,7 @@ function comparableSnapshot(snapshot: PublishedQuizSnapshot) {
     quiz_title: snapshot.quiz_title,
     book_title: snapshot.book_title,
     cover_image_url: snapshot.cover_image_url,
+    ...comparableReaderLinkFields(snapshot),
     outcomes: snapshot.outcomes,
     questions: snapshot.questions,
     random_question_subset: snapshot.random_question_subset ?? false,

@@ -8,13 +8,16 @@ export function QuizPublicFooter() {
       <div className="mx-auto flex max-w-2xl flex-col items-center gap-2 px-6 py-8 text-center text-sm text-muted-foreground sm:flex-row sm:justify-between sm:text-left">
         <p>
           Made with{" "}
-          <Link href="/" className="font-medium text-foreground hover:underline">
+          <Link
+            href="/"
+            className="font-medium text-foreground hover:underline"
+          >
             QuizzyTales
           </Link>
         </p>
         <Link
           href={SIGN_UP_PATH}
-          className="font-medium text-foreground hover:underline"
+          className="hover:text-foreground hover:underline"
         >
           Create your own book quiz
         </Link>

@@ -4,6 +4,9 @@ export type PublishedQuizSnapshot = {
   quiz_title: string
   book_title: string
   cover_image_url: string | null
+  book_url?: string | null
+  newsletter_url?: string | null
+  author_display_name?: string | null
   outcomes: {
     id: string
     name: string
@@ -43,6 +46,8 @@ export type QuizRow = {
   book_title: string
   quiz_title: string
   cover_image_url: string | null
+  book_url: string | null
+  newsletter_url: string | null
   status: QuizStatus
   random_question_subset: boolean
   questions_per_attempt: number | null
