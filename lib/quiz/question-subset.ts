@@ -157,31 +157,55 @@ export function selectionForShownQuestions(
   questions: readonly { id: string; answers: readonly { id: string }[] }[],
   selectedByQuestion: Record<string, string[]>
 ) {
-  const allowedAnswers = new Map(
-    questions.map((question) => [
-      question.id,
-      new Set(question.answers.map((answer) => answer.id)),
-    ])
-  )
   const selected: Record<string, string[]> = {}
   const answerIds: string[] = []
 
-  for (const [questionId, chosen] of Object.entries(selectedByQuestion)) {
-    const allowed = allowedAnswers.get(questionId)
-    if (!allowed || !Array.isArray(chosen)) {
+  // Question order is the attempt order, so later questions stay the most
+  // recent input to scoring even if the selection object was built differently.
+  for (const question of questions) {
+    const chosen = selectedByQuestion[question.id]
+    if (!Array.isArray(chosen)) {
       continue
     }
 
+    const allowed = new Set(question.answers.map((answer) => answer.id))
     const valid = chosen.filter((answerId) => allowed.has(answerId))
     if (valid.length === 0) {
       continue
     }
 
-    selected[questionId] = valid
+    selected[question.id] = valid
     answerIds.push(...valid)
   }
 
   return { selectedByQuestion: selected, answerIds }
+}
+
+/**
+ * 0% before any shown question has an answer, 100% once every shown
+ * question does. `answeredCount` is how many of the shown questions
+ * currently have a selection.
+ */
+export function quizProgressPercent(
+  answeredCount: number,
+  questionCount: number
+) {
+  if (questionCount <= 0) {
+    return 0
+  }
+
+  const bounded = Math.min(Math.max(answeredCount, 0), questionCount)
+  return (bounded / questionCount) * 100
+}
+
+/**
+ * Runs from the server HTML before paint. Hides the intro only when this
+ * browser already has a saved attempt, so hydration can restore it without
+ * a visible jump. First visits have no key and paint the intro immediately.
+ */
+export function attemptRestoreBootstrapScript(storageKey: string) {
+  const literal = JSON.stringify(storageKey).replace(/</g, "\\u003c")
+  return `(function(){try{if(localStorage.getItem(${literal})){document.documentElement.setAttribute("data-quiz-attempt","pending")}}catch(e){}})()`
 }
 
 export function attemptStorageKey(quizId: string, preview: boolean) {

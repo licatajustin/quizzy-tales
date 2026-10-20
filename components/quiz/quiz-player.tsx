@@ -22,6 +22,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import {
+  attemptRestoreBootstrapScript,
   attemptStorageKey,
   formatQuestionCount,
   getAttemptStorageServerSnapshot,
@@ -29,6 +30,7 @@ import {
   notifyAttemptStorage,
   parseStoredQuizAttempt,
   pickRandomQuestions,
+  quizProgressPercent,
   readAttemptStorageSnapshot,
   resolvePersistedQuestions,
   resolveQuestionsPerAttempt,
@@ -52,6 +54,16 @@ type QuizPlayerProps = {
 type PlayerState = "intro" | "playing" | "result"
 
 const EMPTY_SELECTION: Record<string, string[]> = {}
+const SINGLE_CHOICE_ADVANCE_MS = 500
+
+function answeredQuestionCount(
+  questions: readonly { id: string }[],
+  selectedByQuestion: Record<string, string[]>
+) {
+  return questions.filter(
+    (question) => (selectedByQuestion[question.id] ?? []).length > 0
+  ).length
+}
 
 type SubsetSession = {
   state: PlayerState
@@ -79,6 +91,9 @@ export function QuizPlayer({
   const [sessionId, setSessionId] = useState(() => crypto.randomUUID())
   const trackedViewRef = useRef(false)
   const trackedCompleteRef = useRef(false)
+  const advanceTokenRef = useRef(0)
+  const advanceTimerRef = useRef<number | null>(null)
+  const subsetSessionRef = useRef<SubsetSession | null>(null)
   const trackingEnabled = Boolean(quizId) && !isPreview
 
   const pool = useMemo(
@@ -182,16 +197,35 @@ export function QuizPlayer({
     [questions, selectedByQuestion]
   )
 
+  const tieBreakSeed = questions.map((question) => question.id).join("\u0000")
+
   const winningOutcome = useMemo(() => {
     const winner = calculateWinningOutcome(
       outcomes,
       allSelectedAnswerIds,
-      allAnswers
+      allAnswers,
+      tieBreakSeed
     )
     return winner
       ? (outcomes.find((outcome) => outcome.id === winner.id) ?? outcomes[0])
       : outcomes[0]
-  }, [allSelectedAnswerIds, allAnswers, outcomes])
+  }, [allAnswers, allSelectedAnswerIds, outcomes, tieBreakSeed])
+
+  useEffect(() => {
+    if (!subsetActive || !attemptReady) {
+      return
+    }
+
+    document.documentElement.removeAttribute("data-quiz-attempt")
+  }, [attemptReady, subsetActive])
+
+  useEffect(() => {
+    return () => {
+      if (advanceTimerRef.current != null) {
+        window.clearTimeout(advanceTimerRef.current)
+      }
+    }
+  }, [])
 
   useEffect(() => {
     if (!storageKey || !attemptReady || storedRaw === "") {
@@ -231,7 +265,8 @@ export function QuizPlayer({
     const winner = calculateWinningOutcome(
       outcomes,
       selectedAnswerIds,
-      allAnswers
+      allAnswers,
+      tieBreakSeed
     )
 
     return winner
@@ -260,6 +295,7 @@ export function QuizPlayer({
   }
 
   function persistSubset(next: SubsetSession) {
+    subsetSessionRef.current = next
     setSubsetSession(next)
 
     if (!storageKey) {
@@ -281,25 +317,70 @@ export function QuizPlayer({
   }
 
   function currentSubsetSession(): SubsetSession {
-    return (
-      subsetSession ??
-      (restored
-        ? {
-            state: restored.state,
-            questionIndex: restored.questionIndex,
-            selectedByQuestion: restored.selectedByQuestion,
-            chosenQuestions: restored.chosenQuestions,
-          }
-        : {
-            state: "intro",
-            questionIndex: 0,
-            selectedByQuestion: EMPTY_SELECTION,
-            chosenQuestions: null,
-          })
-    )
+    if (subsetSessionRef.current) {
+      return subsetSessionRef.current
+    }
+
+    return restored
+      ? {
+          state: restored.state,
+          questionIndex: restored.questionIndex,
+          selectedByQuestion: restored.selectedByQuestion,
+          chosenQuestions: restored.chosenQuestions,
+        }
+      : {
+          state: "intro",
+          questionIndex: 0,
+          selectedByQuestion: EMPTY_SELECTION,
+          chosenQuestions: null,
+        }
+  }
+
+  function cancelScheduledAdvance() {
+    advanceTokenRef.current += 1
+
+    if (advanceTimerRef.current != null) {
+      window.clearTimeout(advanceTimerRef.current)
+      advanceTimerRef.current = null
+    }
+  }
+
+  function scheduleAdvance(run: () => void) {
+    cancelScheduledAdvance()
+    const token = advanceTokenRef.current
+    advanceTimerRef.current = window.setTimeout(() => {
+      if (advanceTokenRef.current !== token) {
+        return
+      }
+
+      advanceTimerRef.current = null
+      run()
+    }, SINGLE_CHOICE_ADVANCE_MS)
+  }
+
+  function commitPlaying(
+    selection: Record<string, string[]>,
+    nextState: PlayerState,
+    nextIndex: number
+  ) {
+    if (subsetActive) {
+      const current = currentSubsetSession()
+      persistSubset({
+        ...current,
+        selectedByQuestion: selection,
+        state: nextState,
+        questionIndex: nextIndex,
+      })
+      return
+    }
+
+    setManualSelected(selection)
+    setManualState(nextState)
+    setManualIndex(nextIndex)
   }
 
   function resetQuiz() {
+    cancelScheduledAdvance()
     setSessionId(crypto.randomUUID())
     trackedCompleteRef.current = false
 
@@ -331,7 +412,18 @@ export function QuizPlayer({
     })
   }
 
+  function goBack() {
+    if (questionIndex <= 0) {
+      return
+    }
+
+    cancelScheduledAdvance()
+    commitPlaying(selectedByQuestion, "playing", questionIndex - 1)
+  }
+
   function startQuiz() {
+    cancelScheduledAdvance()
+
     if (subsetActive) {
       const current = currentSubsetSession()
       persistSubset({
@@ -371,47 +463,37 @@ export function QuizPlayer({
       ...selectedByQuestion,
       [currentQuestion.id]: nextAnswers,
     }
-    const finished = questionIndex >= questions.length - 1
 
-    if (!currentQuestion.allow_multiple) {
-      trackAnswers(currentQuestion.id, nextAnswers)
-      if (finished) {
-        trackQuizComplete(updated)
-      }
-    }
-
-    if (subsetActive) {
-      const current = currentSubsetSession()
-      persistSubset({
-        ...current,
-        selectedByQuestion: updated,
-        state:
-          !currentQuestion.allow_multiple && finished
-            ? "result"
-            : current.state,
-        questionIndex:
-          !currentQuestion.allow_multiple && !finished
-            ? questionIndex + 1
-            : questionIndex,
-      })
+    if (currentQuestion.allow_multiple) {
+      commitPlaying(
+        updated,
+        state === "intro" ? "playing" : state,
+        questionIndex
+      )
       return
     }
 
-    setManualSelected(updated)
+    const questionId = currentQuestion.id
+    const finished = questionIndex >= questions.length - 1
+    const nextIndex = finished ? questionIndex : questionIndex + 1
+    const nextState: PlayerState = finished ? "result" : "playing"
 
-    if (!currentQuestion.allow_multiple) {
+    commitPlaying(updated, "playing", questionIndex)
+    scheduleAdvance(() => {
+      trackAnswers(questionId, nextAnswers)
       if (finished) {
-        setManualState("result")
-      } else {
-        setManualIndex(questionIndex + 1)
+        trackQuizComplete(updated)
       }
-    }
+      commitPlaying(updated, nextState, nextIndex)
+    })
   }
 
   function submitMultiple() {
     if (!currentQuestion) {
       return
     }
+
+    cancelScheduledAdvance()
 
     const updated = {
       ...selectedByQuestion,
@@ -425,78 +507,86 @@ export function QuizPlayer({
       trackQuizComplete(updated)
     }
 
-    if (subsetActive) {
-      persistSubset({
-        ...currentSubsetSession(),
-        selectedByQuestion: updated,
-        state: finished ? "result" : "playing",
-        questionIndex: finished ? questionIndex : questionIndex + 1,
-      })
-      return
-    }
-
-    setManualSelected(updated)
-
-    if (finished) {
-      setManualState("result")
-    } else {
-      setManualIndex(questionIndex + 1)
-    }
+    commitPlaying(
+      updated,
+      finished ? "result" : "playing",
+      finished ? questionIndex : questionIndex + 1
+    )
   }
 
-  if (subsetActive && !attemptReady) {
-    return <div className="mx-auto min-h-[70vh] w-full max-w-2xl" />
-  }
+  const showAttemptBootstrap =
+    subsetActive && Boolean(storageKey) && !attemptReady
+  const progress = quizProgressPercent(
+    answeredQuestionCount(questions, selectedByQuestion),
+    questions.length
+  )
 
   if (state === "intro") {
     return (
-      <div className="mx-auto flex min-h-[70vh] w-full max-w-2xl flex-col justify-center gap-8 px-6 py-12">
-        {children ?? (
+      <>
+        {showAttemptBootstrap && storageKey ? (
           <>
-            {isPreview ? (
-              <p className="text-center text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                Author preview — draft content
-              </p>
-            ) : null}
-
-            {snapshot.cover_image_url ? (
-              <div className="relative mx-auto aspect-[4/3] w-full max-w-md overflow-hidden rounded-2xl border border-border/60">
-                <Image
-                  src={snapshot.cover_image_url}
-                  alt={`Cover for ${snapshot.quiz_title}`}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 768px) 100vw, 28rem"
-                  priority
-                  unoptimized={snapshot.cover_image_url.startsWith("data:")}
-                />
-              </div>
-            ) : null}
-
-            <div className="space-y-3 text-center">
-              <p className="text-sm font-medium text-muted-foreground">
-                {snapshot.book_title}
-              </p>
-              <h1 className="text-3xl font-semibold tracking-tight">
-                {snapshot.quiz_title}
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                {formatQuestionCount(attemptSize)} · {outcomes.length} possible
-                results
-              </p>
-            </div>
+            <script
+              dangerouslySetInnerHTML={{
+                __html: attemptRestoreBootstrapScript(storageKey),
+              }}
+            />
+            <div className="quiz-attempt-placeholder mx-auto hidden min-h-[70vh] w-full max-w-2xl" />
           </>
-        )}
-
-        <Button
-          type="button"
-          size="lg"
-          className="mx-auto rounded-full px-8"
-          onClick={startQuiz}
+        ) : null}
+        <div
+          className={cn(
+            "mx-auto flex min-h-[70vh] w-full max-w-2xl flex-col justify-center gap-8 px-6 py-12",
+            showAttemptBootstrap && "quiz-attempt-pending"
+          )}
         >
-          Start the quiz
-        </Button>
-      </div>
+          {children ?? (
+            <>
+              {isPreview ? (
+                <p className="text-center text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                  Author preview — draft content
+                </p>
+              ) : null}
+
+              {snapshot.cover_image_url ? (
+                <div className="relative mx-auto aspect-[4/3] w-full max-w-md overflow-hidden rounded-2xl border border-border/60">
+                  <Image
+                    src={snapshot.cover_image_url}
+                    alt={`Cover for ${snapshot.quiz_title}`}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 100vw, 28rem"
+                    priority
+                    unoptimized={snapshot.cover_image_url.startsWith("data:")}
+                  />
+                </div>
+              ) : null}
+
+              <div className="space-y-3 text-center">
+                <p className="text-sm font-medium text-muted-foreground">
+                  {snapshot.book_title}
+                </p>
+                <h1 className="text-3xl font-semibold tracking-tight">
+                  {snapshot.quiz_title}
+                </h1>
+                <p className="text-sm text-muted-foreground">
+                  {formatQuestionCount(attemptSize)} · {outcomes.length}{" "}
+                  possible results
+                </p>
+              </div>
+            </>
+          )}
+
+          <Button
+            type="button"
+            size="lg"
+            className="mx-auto rounded-full px-8"
+            onClick={startQuiz}
+          >
+            Start the quiz
+          </Button>
+        </div>
+      </>
     )
   }
 
@@ -562,8 +652,6 @@ export function QuizPlayer({
     return null
   }
 
-  const progress = ((questionIndex + 1) / questions.length) * 100
-
   return (
     <div className="mx-auto flex min-h-[70vh] w-full max-w-2xl flex-col gap-8 px-6 py-12">
       <div className="space-y-3">
@@ -573,13 +661,24 @@ export function QuizPlayer({
           </span>
           <span>{snapshot.book_title}</span>
         </div>
-        <Progress value={progress} />
+        <Progress
+          value={progress}
+          aria-label="Quiz progress"
+          aria-valuetext={`${Math.round(progress)}%`}
+        />
       </div>
 
       <div className="space-y-6">
-        <h2 className="text-2xl font-semibold tracking-tight">
-          {currentQuestion.question_text}
-        </h2>
+        <div className="space-y-2">
+          <h2 className="text-2xl font-semibold tracking-tight">
+            {currentQuestion.question_text}
+          </h2>
+          {currentQuestion.allow_multiple ? (
+            <p className="text-sm text-muted-foreground">
+              Choose all that apply
+            </p>
+          ) : null}
+        </div>
 
         <div className="grid gap-3">
           {currentQuestion.answers.map((answer) => {
@@ -588,9 +687,10 @@ export function QuizPlayer({
               <button
                 key={answer.id}
                 type="button"
+                aria-pressed={selected}
                 onClick={() => toggleAnswer(answer.id)}
                 className={cn(
-                  "rounded-xl border px-4 py-4 text-left text-sm transition-colors",
+                  "rounded-xl border px-4 py-4 text-left text-sm transition-colors outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
                   selected
                     ? "border-primary bg-primary/10"
                     : "border-border/60 bg-card/40 hover:bg-accent/40"
@@ -602,16 +702,27 @@ export function QuizPlayer({
           })}
         </div>
 
-        {currentQuestion.allow_multiple ? (
+        <div className="flex flex-wrap items-center gap-3">
           <Button
             type="button"
+            variant="outline"
             className="rounded-full"
-            disabled={selectedForCurrent.length === 0}
-            onClick={submitMultiple}
+            disabled={questionIndex === 0}
+            onClick={goBack}
           >
-            Continue
+            Back
           </Button>
-        ) : null}
+          {currentQuestion.allow_multiple ? (
+            <Button
+              type="button"
+              className="rounded-full"
+              disabled={selectedForCurrent.length === 0}
+              onClick={submitMultiple}
+            >
+              Continue
+            </Button>
+          ) : null}
+        </div>
       </div>
     </div>
   )
