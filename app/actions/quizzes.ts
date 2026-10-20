@@ -7,16 +7,14 @@ import { incrementSubscriptionForPublish } from "@/app/actions/stripe"
 import { decrementSubscriptionOnUnpublish } from "@/lib/stripe/unpublish-billing"
 import { getQuizDraft } from "@/lib/quiz/queries"
 import { executePublishQuiz } from "@/lib/quiz/publish-billing"
+import { validateQuestionsPerAttemptInput } from "@/lib/quiz/question-subset"
 import { validateQuizForPublish } from "@/lib/quiz/published-snapshot"
 import { generateSlug } from "@/lib/quiz/slug"
 import {
   getAuthorBillingProfile,
   getPublishedQuizCount,
 } from "@/lib/subscription-server"
-import {
-  isInGracePeriod,
-  isPaidSubscriptionStatus,
-} from "@/lib/subscription"
+import { isInGracePeriod, isPaidSubscriptionStatus } from "@/lib/subscription"
 import { createClient } from "@/lib/supabase/server"
 
 export type ActionResult = {
@@ -173,6 +171,43 @@ export async function updateQuizDetails(
   return { success: true }
 }
 
+export async function updateQuizQuestionSettings(
+  quizId: string,
+  input: {
+    random_question_subset: boolean
+    questions_per_attempt: number | null
+  }
+): Promise<ActionResult> {
+  const { supabase, draft } = await requireQuizOwner(quizId)
+  const enabled = input.random_question_subset
+  const questionsPerAttempt = input.questions_per_attempt
+  const validationError = validateQuestionsPerAttemptInput(
+    questionsPerAttempt,
+    draft.questions.length,
+    enabled,
+    draft.quiz.questions_per_attempt
+  )
+
+  if (validationError) {
+    return { error: validationError }
+  }
+
+  const { error } = await supabase
+    .from("quizzes")
+    .update({
+      random_question_subset: enabled,
+      questions_per_attempt: questionsPerAttempt,
+    })
+    .eq("id", quizId)
+
+  if (error) {
+    return { error: error.message }
+  }
+
+  revalidateQuizPaths(quizId, draft.quiz.slug)
+  return { success: true }
+}
+
 export async function deleteQuiz(quizId: string): Promise<ActionResult> {
   const { supabase, draft } = await requireQuizOwner(quizId)
 
@@ -307,9 +342,9 @@ export async function deleteOutcome(outcomeId: string): Promise<ActionResult> {
   return { success: true }
 }
 
-export async function createQuestion(quizId: string): Promise<
-  ActionResult & { id?: string }
-> {
+export async function createQuestion(
+  quizId: string
+): Promise<ActionResult & { id?: string }> {
   const { supabase, draft } = await requireQuizOwner(quizId)
 
   const sortOrder =
@@ -391,7 +426,9 @@ export async function updateQuestion(
   return { success: true }
 }
 
-export async function deleteQuestion(questionId: string): Promise<ActionResult> {
+export async function deleteQuestion(
+  questionId: string
+): Promise<ActionResult> {
   const { supabase } = await requireAuthor()
 
   const { data: question } = await supabase
@@ -406,7 +443,10 @@ export async function deleteQuestion(questionId: string): Promise<ActionResult> 
 
   const { draft } = await requireQuizOwner(question.quiz_id)
 
-  const { error } = await supabase.from("questions").delete().eq("id", questionId)
+  const { error } = await supabase
+    .from("questions")
+    .delete()
+    .eq("id", questionId)
 
   if (error) {
     return { error: error.message }
@@ -573,7 +613,8 @@ export async function publishQuiz(quizId: string): Promise<ActionResult> {
       return { success: true }
     } catch (error) {
       return {
-        error: error instanceof Error ? error.message : "Could not publish quiz.",
+        error:
+          error instanceof Error ? error.message : "Could not publish quiz.",
       }
     }
   }
@@ -586,11 +627,7 @@ export async function publishQuiz(quizId: string): Promise<ActionResult> {
   const paidSlots = isPaid ? author.subscription_quantity : 0
   const requiredSlots = publishedCount + 1
 
-  if (
-    !isPaid &&
-    isInGracePeriod(author) &&
-    publishedCount > 0
-  ) {
+  if (!isPaid && isInGracePeriod(author) && publishedCount > 0) {
     return {
       error:
         "Payment is required before publishing another quiz. Update billing to continue.",

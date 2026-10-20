@@ -13,6 +13,7 @@ import {
   updateAnswer,
   updateQuestion,
 } from "@/app/actions/quizzes"
+import { QuestionSubsetCard } from "@/components/dashboard/quiz-editor/question-subset-card"
 import { ScoreChips } from "@/components/dashboard/quiz-editor/score-chips"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
@@ -33,6 +34,8 @@ type QuestionsTabProps = {
   questions: QuestionRow[]
   answers: AnswerRow[]
   outcomes: OutcomeRow[]
+  randomQuestionSubset: boolean
+  questionsPerAttempt: number | null
 }
 
 export function QuestionsTab({
@@ -40,6 +43,8 @@ export function QuestionsTab({
   questions,
   answers,
   outcomes,
+  randomQuestionSubset,
+  questionsPerAttempt,
 }: QuestionsTabProps) {
   const router = useRouter()
 
@@ -62,7 +67,11 @@ export function QuestionsTab({
             Each answer adds points to characters. Highest total wins.
           </p>
         </div>
-        <Button type="button" className="rounded-full" onClick={handleCreateQuestion}>
+        <Button
+          type="button"
+          className="rounded-full"
+          onClick={handleCreateQuestion}
+        >
           <Plus data-icon="inline-start" />
           Add question
         </Button>
@@ -73,11 +82,19 @@ export function QuestionsTab({
         <AlertTitle>How scoring works</AlertTitle>
         <AlertDescription>
           For every answer, choose how many points (0–10) each character
-          receives if a reader picks it. Use 0 when the answer has nothing to
-          do with a character, and 10 when it&apos;s a perfect fit. Points add
-          up across all questions — the character with the most wins.
+          receives if a reader picks it. Use 0 when the answer has nothing to do
+          with a character, and 10 when it&apos;s a perfect fit. Points add up
+          across the questions a reader answers — the character with the most
+          wins.
         </AlertDescription>
       </Alert>
+
+      <QuestionSubsetCard
+        quizId={quizId}
+        questionCount={questions.length}
+        randomQuestionSubset={randomQuestionSubset}
+        questionsPerAttempt={questionsPerAttempt}
+      />
 
       {questions.length === 0 ? (
         <p className="text-sm text-muted-foreground">
@@ -91,7 +108,9 @@ export function QuestionsTab({
             key={question.id}
             index={index}
             question={question}
-            answers={answers.filter((answer) => answer.question_id === question.id)}
+            answers={answers.filter(
+              (answer) => answer.question_id === question.id
+            )}
             outcomes={outcomes}
             onRefresh={() => router.refresh()}
           />
@@ -315,15 +334,15 @@ function AnswerCard({
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
-          {outcomes.map((outcome) => (
-            <ScoreChips
-              key={outcome.id}
-              outcomeId={outcome.id}
-              outcomeName={outcome.name}
-              value={weights[outcome.id] ?? 0}
-              onChange={handleWeightChange}
-            />
-          ))}
+        {outcomes.map((outcome) => (
+          <ScoreChips
+            key={outcome.id}
+            outcomeId={outcome.id}
+            outcomeName={outcome.name}
+            value={weights[outcome.id] ?? 0}
+            onChange={handleWeightChange}
+          />
+        ))}
       </div>
     </div>
   )
