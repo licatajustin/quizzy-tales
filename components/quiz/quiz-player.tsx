@@ -10,6 +10,7 @@ import {
 import Image from "next/image"
 import { RotateCcw } from "lucide-react"
 
+import { ExploreOtherResults } from "@/components/quiz/explore-other-results"
 import { QuizResult } from "@/components/quiz/quiz-result"
 import { QuizResultLinks } from "@/components/quiz/quiz-result-links"
 import { QuizShareButton } from "@/components/quiz/quiz-share-button"
@@ -609,7 +610,6 @@ export function QuizPlayer({
         {/*
           Slots below the profile, left for sibling work:
           continueStory — "Continue the story"
-          exploreResults — "Explore the other results"
           resultShare — per-result share links
           Reader links stay after share and retake.
         */}
@@ -617,6 +617,13 @@ export function QuizPlayer({
           outcome={winningOutcome}
           quizTitle={snapshot.quiz_title}
           shares={scoredAttempt.shares}
+          exploreResults={
+            <ExploreOtherResults
+              outcomes={outcomes}
+              winnerId={winningOutcome.id}
+              quizTitle={snapshot.quiz_title}
+            />
+          }
           actions={
             <>
               {trackingEnabled && quizId && slug ? (

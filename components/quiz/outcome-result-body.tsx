@@ -1,5 +1,4 @@
-import Image from "next/image"
-
+import { OutcomePortrait } from "@/components/quiz/outcome-portrait"
 import {
   visibleOutcomeDetails,
   type OutcomeDetailSection,
@@ -10,6 +9,15 @@ import { cn } from "@/lib/utils"
 type OutcomeResultBodyProps = {
   outcome: PublishedOutcome
   quizTitle: string
+  /** Small label above the character name. */
+  eyebrow?: string
+  headingLevel?: "h1" | "h2"
+  /** Eager-load the portrait. Off when the portrait sits in a dialog. */
+  prioritizeImage?: boolean
+  /** Show a monogram when the outcome has no portrait. */
+  portraitFallback?: boolean
+  /** Slightly quieter type, for a dialog rather than the full result page. */
+  compact?: boolean
 }
 
 function visibleCopy(value: string | null | undefined) {
@@ -20,11 +28,14 @@ function visibleCopy(value: string | null | undefined) {
 function OutcomeDetailCard({
   section,
   span,
+  headingLevel,
 }: {
   section: OutcomeDetailSection
   span: boolean
+  headingLevel: "h2" | "h3"
 }) {
   const label = visibleCopy(section.label)
+  const Heading = headingLevel
 
   return (
     <article
@@ -34,9 +45,9 @@ function OutcomeDetailCard({
       )}
     >
       {label ? (
-        <h2 className="text-xs font-medium tracking-widest text-muted-foreground uppercase">
+        <Heading className="text-xs font-medium tracking-widest text-muted-foreground uppercase">
           {label}
-        </h2>
+        </Heading>
       ) : null}
       {section.kind === "text" ? (
         <p className="text-sm leading-relaxed whitespace-pre-wrap text-foreground/90">
@@ -78,42 +89,72 @@ function OutcomeDetailCard({
 export function OutcomeResultBody({
   outcome,
   quizTitle,
+  eyebrow = "Your result",
+  headingLevel = "h1",
+  prioritizeImage = true,
+  portraitFallback = false,
+  compact = false,
 }: OutcomeResultBodyProps) {
   const tagline = visibleCopy(outcome.tagline)
   const description = visibleCopy(outcome.description)
   const name = visibleCopy(outcome.name)
   const sections = visibleOutcomeDetails(outcome.details)
+  const showPortrait = Boolean(outcome.image_url) || portraitFallback
+  const Heading = headingLevel === "h2" ? "h2" : "h1"
+  const sectionHeadingLevel = headingLevel === "h2" ? "h3" : "h2"
 
   return (
-    <div className="flex flex-col items-center gap-6 text-center">
-      {outcome.image_url ? (
-        <div className="relative isolate w-full max-w-md">
+    <div
+      className={cn(
+        "flex flex-col items-center text-center",
+        compact ? "gap-5" : "gap-6"
+      )}
+    >
+      {showPortrait ? (
+        <div
+          className={cn(
+            "relative isolate w-full",
+            compact ? "max-w-xs" : "max-w-md"
+          )}
+        >
           <div
             aria-hidden
             className="pointer-events-none absolute -inset-8 -z-10 rounded-full bg-primary/15 blur-3xl"
           />
           <div className="relative aspect-square overflow-hidden rounded-3xl border border-border/60 bg-card shadow-sm">
-            <Image
-              src={outcome.image_url}
-              alt={`${outcome.name} from ${quizTitle}`}
-              fill
-              priority
-              className="object-cover"
-              sizes="(max-width: 768px) 100vw, 28rem"
-              unoptimized={outcome.image_url.startsWith("data:")}
+            <OutcomePortrait
+              name={name || "Result"}
+              imageUrl={outcome.image_url}
+              alt={outcome.image_url ? `${outcome.name} from ${quizTitle}` : ""}
+              priority={prioritizeImage && Boolean(outcome.image_url)}
+              sizes={
+                compact
+                  ? "(max-width: 768px) 80vw, 20rem"
+                  : "(max-width: 768px) 100vw, 28rem"
+              }
+              initialsClassName={compact ? "text-5xl" : "text-6xl"}
             />
           </div>
         </div>
       ) : null}
 
       <div className="space-y-3">
-        <p className="text-xs font-medium tracking-[0.22em] text-muted-foreground uppercase">
-          Your result
-        </p>
+        {eyebrow ? (
+          <p className="text-xs font-medium tracking-[0.22em] text-muted-foreground uppercase">
+            {eyebrow}
+          </p>
+        ) : null}
         {name ? (
-          <h1 className="text-4xl leading-[1.05] font-semibold tracking-tight text-balance sm:text-5xl md:text-6xl">
+          <Heading
+            className={cn(
+              "font-semibold tracking-tight text-balance text-foreground",
+              compact
+                ? "text-3xl leading-tight sm:text-4xl"
+                : "text-4xl leading-[1.05] sm:text-5xl md:text-6xl"
+            )}
+          >
             {name}
-          </h1>
+          </Heading>
         ) : null}
         <div aria-hidden className="mx-auto h-1 w-12 rounded-full bg-primary" />
       </div>
@@ -144,6 +185,7 @@ export function OutcomeResultBody({
             <OutcomeDetailCard
               key={`${section.kind}-${section.label}-${index}`}
               section={section}
+              headingLevel={sectionHeadingLevel}
               span={
                 sections.length === 1 ||
                 (section.kind === "text" && section.value.length > 200)
