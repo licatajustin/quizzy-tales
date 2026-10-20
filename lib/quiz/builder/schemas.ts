@@ -1,17 +1,34 @@
 import { z } from "zod"
 
 import type { QuizBuilderDraft } from "@/lib/quiz/builder/types"
+import { generatedDetailSectionSchema } from "@/lib/ai/schemas"
+import {
+  normalizeOutcomeDetails,
+  normalizeTagline,
+  sectionsFromGenerated,
+} from "@/lib/quiz/outcome-details"
 
 const weightEntrySchema = z.object({
   outcome_id: z.string(),
   value: z.number().min(0).max(10),
 })
 
-const builderOutcomeSchema = z.object({
+const builderOutcomeAiSchema = z.object({
   id: z.string(),
   name: z.string(),
   description: z.string(),
   image_url: z.string(),
+  tagline: z.string(),
+  details: z.array(generatedDetailSectionSchema).max(8),
+})
+
+const builderOutcomeClientSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string(),
+  image_url: z.string(),
+  tagline: z.string().optional(),
+  details: z.unknown().optional(),
 })
 
 const builderAnswerAiSchema = z.object({
@@ -44,7 +61,7 @@ export const quizBuilderDraftAiSchema = z.object({
   book_title: z.string(),
   quiz_title: z.string(),
   cover_image_url: z.string(),
-  outcomes: z.array(builderOutcomeSchema),
+  outcomes: z.array(builderOutcomeAiSchema),
   questions: z.array(builderQuestionAiSchema),
 })
 
@@ -52,7 +69,7 @@ export const quizBuilderDraftClientSchema = z.object({
   book_title: z.string(),
   quiz_title: z.string(),
   cover_image_url: z.string(),
-  outcomes: z.array(builderOutcomeSchema),
+  outcomes: z.array(builderOutcomeClientSchema),
   questions: z.array(builderQuestionClientSchema),
 })
 
@@ -139,6 +156,8 @@ export function mergeBuilderDraftWithClientImages(
       const clientOutcome = clientDraft.outcomes.find(
         (entry) => entry.id === outcome.id
       )
+      const generatedDetails = sectionsFromGenerated(outcome.details)
+      const clientDetails = normalizeOutcomeDetails(clientOutcome?.details)
 
       return {
         ...outcome,
@@ -146,6 +165,10 @@ export function mergeBuilderDraftWithClientImages(
           clientOutcome?.image_url ?? "",
           outcome.image_url
         ),
+        tagline:
+          normalizeTagline(outcome.tagline) ||
+          normalizeTagline(clientOutcome?.tagline),
+        details: generatedDetails.length > 0 ? generatedDetails : clientDetails,
       }
     }),
   }
@@ -157,8 +180,28 @@ export function draftToAiFormat(draft: QuizBuilderDraft) {
     quiz_title: draft.quiz_title,
     cover_image_url: summarizeImageUrlForAi(draft.cover_image_url),
     outcomes: draft.outcomes.map((outcome) => ({
-      ...outcome,
+      id: outcome.id,
+      name: outcome.name,
+      description: outcome.description,
       image_url: summarizeImageUrlForAi(outcome.image_url),
+      tagline: outcome.tagline,
+      details: outcome.details.map((section) => {
+        if (section.kind === "text") {
+          return {
+            label: section.label,
+            kind: section.kind,
+            text: section.value,
+            items: [],
+          }
+        }
+
+        return {
+          label: section.label,
+          kind: section.kind,
+          text: "",
+          items: section.value,
+        }
+      }),
     })),
     questions: draft.questions.map((question) => ({
       id: question.id,
@@ -184,6 +227,8 @@ export function normalizeBuilderDraft(
     name: outcome.name.trim(),
     description: outcome.description.trim(),
     image_url: outcome.image_url.trim(),
+    tagline: normalizeTagline(outcome.tagline),
+    details: sectionsFromGenerated(outcome.details),
   }))
 
   const outcomeIds = outcomes.map((outcome) => outcome.id)

@@ -4,7 +4,10 @@ import { streamObject } from "ai"
 import { requireAiAccessForKind, recordAiUsageForKind } from "@/lib/ai/auth"
 import { TEXT_MODEL } from "@/lib/ai/models"
 import { buildQuizBuilderSystemPrompt } from "@/lib/quiz/builder/prompts"
-import { getBuilderMissingFields } from "@/lib/quiz/builder/types"
+import {
+  getBuilderMissingFields,
+  hydrateBuilderDraft,
+} from "@/lib/quiz/builder/types"
 import {
   draftToAiFormat,
   mergeBuilderDraftWithClientImages,
@@ -18,10 +21,7 @@ export async function POST(request: Request) {
   const auth = await requireAiAccessForKind("builder-chat")
 
   if ("error" in auth) {
-    return NextResponse.json(
-      { error: auth.error },
-      { status: auth.status }
-    )
+    return NextResponse.json({ error: auth.error }, { status: auth.status })
   }
 
   let body: unknown
@@ -41,7 +41,8 @@ export async function POST(request: Request) {
     )
   }
 
-  const { messages, draft: clientDraft } = parsed.data
+  const { messages } = parsed.data
+  const clientDraft = hydrateBuilderDraft(parsed.data.draft)
 
   const conversation = messages
     .map((message) => `${message.role.toUpperCase()}: ${message.content}`)
@@ -64,7 +65,10 @@ export async function POST(request: Request) {
 
         try {
           for await (const partial of result.partialObjectStream) {
-            if (typeof partial.message === "string" && partial.message.length > 0) {
+            if (
+              typeof partial.message === "string" &&
+              partial.message.length > 0
+            ) {
               controller.enqueue(
                 encoder.encode(
                   encodeNdjsonLine({

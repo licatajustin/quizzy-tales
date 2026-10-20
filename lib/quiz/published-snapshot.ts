@@ -1,9 +1,14 @@
 import {
+  normalizeOutcomeDetails,
+  normalizeTagline,
+} from "@/lib/quiz/outcome-details"
+import {
   comparableReaderLinkFields,
   snapshotReaderLinks,
 } from "@/lib/quiz/reader-links"
 import type {
   AnswerRow,
+  PublishedOutcome,
   PublishedQuizSnapshot,
   QuizDraft,
   QuizRow,
@@ -43,6 +48,8 @@ export function buildPublishedSnapshot(
         description: outcome.description,
         image_url: outcome.image_url,
         sort_order: outcome.sort_order,
+        tagline: normalizeTagline(outcome.tagline),
+        details: normalizeOutcomeDetails(outcome.details),
       })),
     questions: [...draft.questions]
       .sort((a, b) => a.sort_order - b.sort_order)
@@ -66,21 +73,54 @@ export function buildPublishedSnapshot(
   }
 }
 
+function comparableOutcome(outcome: PublishedOutcome) {
+  return {
+    id: outcome.id,
+    name: outcome.name,
+    description: outcome.description,
+    image_url: outcome.image_url,
+    sort_order: outcome.sort_order,
+    tagline: normalizeTagline(outcome.tagline),
+    details: normalizeOutcomeDetails(outcome.details),
+  }
+}
+
+export function normalizePublishedSnapshot(
+  snapshot: PublishedQuizSnapshot
+): PublishedQuizSnapshot {
+  return {
+    ...snapshot,
+    outcomes: snapshot.outcomes.map((outcome) => ({
+      ...outcome,
+      tagline: normalizeTagline(outcome.tagline),
+      details: normalizeOutcomeDetails(outcome.details),
+    })),
+  }
+}
+
 function comparableSnapshot(snapshot: PublishedQuizSnapshot) {
   return {
     quiz_title: snapshot.quiz_title,
     book_title: snapshot.book_title,
     cover_image_url: snapshot.cover_image_url,
     ...comparableReaderLinkFields(snapshot),
-    outcomes: snapshot.outcomes,
+    outcomes: snapshot.outcomes.map(comparableOutcome),
     questions: snapshot.questions,
     random_question_subset: snapshot.random_question_subset ?? false,
     questions_per_attempt: snapshot.questions_per_attempt ?? null,
   }
 }
 
-export function validateQuizForPublish(draft: QuizDraft) {
+export type QuizPublishValidation = {
+  errors: string[]
+  warnings: string[]
+}
+
+export function validateQuizForPublish(
+  draft: QuizDraft
+): QuizPublishValidation {
   const errors: string[] = []
+  const warnings: string[] = []
 
   if (draft.outcomes.length < 2) {
     errors.push("Add at least 2 character outcomes.")
@@ -109,7 +149,25 @@ export function validateQuizForPublish(draft: QuizDraft) {
     errors.push("Book title and quiz title are required.")
   }
 
-  return errors
+  const thinOutcomes = draft.outcomes.filter(
+    (outcome) => !outcome.description.trim()
+  )
+  if (thinOutcomes.length === 1) {
+    const name = thinOutcomes[0]?.name.trim() || "One outcome"
+    warnings.push(
+      `"${name}" has no description, so its result page will be thin.`
+    )
+  } else if (thinOutcomes.length > 1) {
+    warnings.push(
+      `${thinOutcomes.length} outcomes have no description, so their result pages will be thin.`
+    )
+  }
+
+  if (!draft.quiz.cover_image_url?.trim()) {
+    warnings.push("This quiz has no cover image.")
+  }
+
+  return { errors, warnings }
 }
 
 export function buildCoverImageQuizUpdate(

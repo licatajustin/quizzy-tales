@@ -10,6 +10,7 @@ import {
 import Image from "next/image"
 import { RotateCcw } from "lucide-react"
 
+import { OutcomeResultBody } from "@/components/quiz/outcome-result-body"
 import { QuizResultLinks } from "@/components/quiz/quiz-result-links"
 import { QuizShareButton } from "@/components/quiz/quiz-share-button"
 
@@ -35,6 +36,7 @@ import {
   subscribeAttemptStorage,
   writeStoredQuizAttempt,
 } from "@/lib/quiz/question-subset"
+import { normalizePublishedSnapshot } from "@/lib/quiz/published-snapshot"
 import { snapshotReaderLinks } from "@/lib/quiz/reader-links"
 import { calculateWinningOutcome } from "@/lib/quiz/scoring"
 import type { PublishedQuizSnapshot } from "@/lib/quiz/types"
@@ -60,10 +62,14 @@ type SubsetSession = {
 
 export function QuizPlayer({
   quizId,
-  snapshot,
+  snapshot: rawSnapshot,
   isPreview = false,
   children,
 }: QuizPlayerProps) {
+  const snapshot = useMemo(
+    () => normalizePublishedSnapshot(rawSnapshot),
+    [rawSnapshot]
+  )
   const [manualState, setManualState] = useState<PlayerState>("intro")
   const [manualIndex, setManualIndex] = useState(0)
   const [manualSelected, setManualSelected] = useState<
@@ -178,14 +184,7 @@ export function QuizPlayer({
 
   const winningOutcome = useMemo(() => {
     const winner = calculateWinningOutcome(
-      outcomes.map((outcome) => ({
-        id: outcome.id,
-        quiz_id: "",
-        name: outcome.name,
-        description: outcome.description,
-        image_url: outcome.image_url,
-        sort_order: outcome.sort_order,
-      })),
+      outcomes,
       allSelectedAnswerIds,
       allAnswers
     )
@@ -230,14 +229,7 @@ export function QuizPlayer({
       selection
     ).answerIds
     const winner = calculateWinningOutcome(
-      outcomes.map((outcome) => ({
-        id: outcome.id,
-        quiz_id: "",
-        name: outcome.name,
-        description: outcome.description,
-        image_url: outcome.image_url,
-        sort_order: outcome.sort_order,
-      })),
+      outcomes,
       selectedAnswerIds,
       allAnswers
     )
@@ -511,28 +503,20 @@ export function QuizPlayer({
   if (state === "result" && winningOutcome) {
     return (
       <div className="mx-auto flex min-h-[70vh] w-full max-w-2xl flex-col justify-center gap-8 px-6 py-12">
-        <div className="space-y-3 text-center">
-          <p className="text-sm font-medium text-muted-foreground">
-            You are...
-          </p>
-          <h2 className="text-3xl font-semibold tracking-tight">
-            {winningOutcome.name}
-          </h2>
-          <p className="text-muted-foreground">{winningOutcome.description}</p>
-        </div>
-
-        {winningOutcome.image_url ? (
-          <div className="relative mx-auto aspect-square w-full max-w-xs overflow-hidden rounded-2xl border border-border/60">
-            <Image
-              src={winningOutcome.image_url}
-              alt={`${winningOutcome.name} from ${snapshot.quiz_title}`}
-              fill
-              className="object-cover"
-              sizes="(max-width: 768px) 80vw, 20rem"
-              unoptimized={winningOutcome.image_url.startsWith("data:")}
-            />
-          </div>
-        ) : null}
+        <OutcomeResultBody outcome={winningOutcome}>
+          {winningOutcome.image_url ? (
+            <div className="relative mx-auto aspect-square w-full max-w-xs overflow-hidden rounded-2xl border border-border/60">
+              <Image
+                src={winningOutcome.image_url}
+                alt={`${winningOutcome.name} from ${snapshot.quiz_title}`}
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 80vw, 20rem"
+                unoptimized={winningOutcome.image_url.startsWith("data:")}
+              />
+            </div>
+          ) : null}
+        </OutcomeResultBody>
 
         <div className="flex flex-wrap justify-center gap-3">
           {trackingEnabled && quizId ? (

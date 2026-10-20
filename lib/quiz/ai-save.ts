@@ -4,6 +4,12 @@ import type { GeneratedQuiz, QuizRevisionPatch } from "@/lib/ai/schemas"
 import { resolveBuilderImageUrl } from "@/lib/quiz/builder/images"
 import type { QuizBuilderDraft } from "@/lib/quiz/builder/types"
 import { builderDraftToGeneratedQuiz } from "@/lib/quiz/builder/types"
+import {
+  detailSectionToGenerated,
+  normalizeOutcomeDetails,
+  normalizeTagline,
+  type OutcomeDetailSection,
+} from "@/lib/quiz/outcome-details"
 import { generateSlug } from "@/lib/quiz/slug"
 
 async function ensureUniqueSlug(
@@ -69,6 +75,8 @@ export async function saveGeneratedQuiz(
         quiz_id: quiz.id,
         name: outcome.name.trim(),
         description: outcome.description.trim(),
+        tagline: outcome.tagline.trim(),
+        details: outcome.details,
         sort_order: index,
       })
       .select("id")
@@ -119,7 +127,9 @@ export async function saveGeneratedQuiz(
       }
     })
 
-    const { error: answersError } = await supabase.from("answers").insert(answerRows)
+    const { error: answersError } = await supabase
+      .from("answers")
+      .insert(answerRows)
 
     if (answersError) {
       throw new Error(answersError.message)
@@ -188,6 +198,8 @@ export async function saveBuilderQuiz(
         quiz_id: quiz.id,
         name: outcome.name.trim(),
         description: outcome.description.trim(),
+        tagline: outcome.tagline.trim(),
+        details: outcome.details,
         image_url: imageUrl,
         sort_order: index,
       })
@@ -239,7 +251,9 @@ export async function saveBuilderQuiz(
       }
     })
 
-    const { error: answersError } = await supabase.from("answers").insert(answerRows)
+    const { error: answersError } = await supabase
+      .from("answers")
+      .insert(answerRows)
 
     if (answersError) {
       throw new Error(answersError.message)
@@ -251,7 +265,13 @@ export async function saveBuilderQuiz(
 
 export function draftToAiRevisionContext(draft: {
   quiz: { quiz_title: string; book_title: string }
-  outcomes: Array<{ id: string; name: string; description: string }>
+  outcomes: Array<{
+    id: string
+    name: string
+    description: string
+    tagline?: string
+    details?: OutcomeDetailSection[]
+  }>
   questions: Array<{
     id: string
     question_text: string
@@ -282,6 +302,8 @@ export function draftToAiRevisionContext(draft: {
       id: `outcome_${index + 1}`,
       name: outcome.name,
       description: outcome.description,
+      tagline: outcome.tagline ?? "",
+      details: (outcome.details ?? []).map(detailSectionToGenerated),
     })),
     questions: draft.questions.map((question) => ({
       question_text: question.question_text,
@@ -301,40 +323,40 @@ function normalizeOutcomeName(name: string) {
   return name.trim().toLowerCase()
 }
 
-function buildOutcomeImageLookup(
-  existingOutcomes: Array<{
-    name: string
-    image_url: string | null
-    sort_order: number
-  }>
+type ExistingOutcomeProfile = {
+  name: string
+  description?: string | null
+  image_url: string | null
+  sort_order: number
+  tagline?: string | null
+  details?: unknown
+}
+
+function buildOutcomePreservationLookup(
+  existingOutcomes: ExistingOutcomeProfile[]
 ) {
-  const imageByTempId = new Map<string, string>()
-  const imageByName = new Map<string, string>()
+  const byTempId = new Map<string, ExistingOutcomeProfile>()
+  const byName = new Map<string, ExistingOutcomeProfile>()
 
   const sorted = [...existingOutcomes].sort(
     (a, b) => a.sort_order - b.sort_order
   )
 
   for (const [index, outcome] of sorted.entries()) {
-    if (!outcome.image_url) {
-      continue
-    }
-
-    imageByTempId.set(`outcome_${index + 1}`, outcome.image_url)
-    imageByName.set(normalizeOutcomeName(outcome.name), outcome.image_url)
+    byTempId.set(`outcome_${index + 1}`, outcome)
+    byName.set(normalizeOutcomeName(outcome.name), outcome)
   }
 
-  return { imageByTempId, imageByName }
+  return { byTempId, byName }
 }
 
-function resolvePreservedOutcomeImage(
-  outcome: GeneratedQuiz["outcomes"][number],
-  lookup: ReturnType<typeof buildOutcomeImageLookup>
+function findExistingOutcome(
+  outcome: Pick<GeneratedQuiz["outcomes"][number], "id" | "name">,
+  lookup: ReturnType<typeof buildOutcomePreservationLookup>
 ) {
   return (
-    lookup.imageByTempId.get(outcome.id) ??
-    lookup.imageByName.get(normalizeOutcomeName(outcome.name)) ??
-    null
+    lookup.byTempId.get(outcome.id) ??
+    lookup.byName.get(normalizeOutcomeName(outcome.name))
   )
 }
 
@@ -345,10 +367,10 @@ async function replaceQuizContent(
 ) {
   const { data: existingOutcomes } = await supabase
     .from("outcomes")
-    .select("name, image_url, sort_order")
+    .select("name, description, image_url, sort_order, tagline, details")
     .eq("quiz_id", quizId)
 
-  const outcomeImageLookup = buildOutcomeImageLookup(existingOutcomes ?? [])
+  const outcomeLookup = buildOutcomePreservationLookup(existingOutcomes ?? [])
 
   const { data: questions } = await supabase
     .from("questions")
@@ -367,13 +389,21 @@ async function replaceQuizContent(
   const outcomeIdMap = new Map<string, string>()
 
   for (const [index, outcome] of generated.outcomes.entries()) {
+    const existing = findExistingOutcome(outcome, outcomeLookup)
+    const details =
+      outcome.details.length > 0
+        ? outcome.details
+        : normalizeOutcomeDetails(existing?.details)
     const { data: row, error } = await supabase
       .from("outcomes")
       .insert({
         quiz_id: quizId,
         name: outcome.name.trim(),
-        description: outcome.description.trim(),
-        image_url: resolvePreservedOutcomeImage(outcome, outcomeImageLookup),
+        description:
+          outcome.description.trim() || existing?.description?.trim() || "",
+        tagline: outcome.tagline.trim() || normalizeTagline(existing?.tagline),
+        details,
+        image_url: existing?.image_url ?? null,
         sort_order: index,
       })
       .select("id")
@@ -424,7 +454,9 @@ async function replaceQuizContent(
       }
     })
 
-    const { error: answersError } = await supabase.from("answers").insert(answerRows)
+    const { error: answersError } = await supabase
+      .from("answers")
+      .insert(answerRows)
 
     if (answersError) {
       throw new Error(answersError.message)
@@ -454,8 +486,6 @@ export async function applyQuizRevisionPatch(
       questions: patch.questions,
     })
   } else if (patch.outcomes.length > 0 || patch.questions.length > 0) {
-    throw new Error(
-      "Content updates must include both outcomes and questions."
-    )
+    throw new Error("Content updates must include both outcomes and questions.")
   }
 }

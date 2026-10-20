@@ -1,3 +1,15 @@
+function outcomeProfileInstructions(summaryLength: string) {
+  return `- For every outcome, write a result profile the reader will care about:
+  - tagline: a short epithet under the name (a few words). Do not repeat the name.
+  - description: ${summaryLength}
+  - details: 4 to 6 sections. Choose labels that fit this book and this character. Do not reuse one fixed template across books.
+    Each section uses label, kind, text, and items.
+    kind "text": put one or two sentences in text and leave items empty.
+    kind "bullets": put 3 to 5 short lines in items and leave text empty.
+    kind "chips": put 3 to 6 short labels in items and leave text empty.
+    Mix the three kinds. Good sections name a defining trait, a short list, or a cluster of labels (colors, symbols, companions, habits, or whatever belongs to this character).`
+}
+
 type GenerateQuizPromptInput = {
   bookTitle: string
   synopsis: string
@@ -17,7 +29,8 @@ export function buildGenerateQuizPrompt(input: GenerateQuizPromptInput) {
   const questionStyle = input.questionStyle ?? "preference"
   const includeDescriptions = input.includeDescriptions ?? true
   const quizTitle =
-    input.quizTitle?.trim() || `Which character from ${input.bookTitle} are you?`
+    input.quizTitle?.trim() ||
+    `Which character from ${input.bookTitle} are you?`
   const authorName = input.authorName?.trim() || input.authorDisplayName?.trim()
 
   const outcomeInstruction = input.outcomes?.length
@@ -36,7 +49,11 @@ Requirements:
 ${outcomeInstruction}
 - Tone: ${tone}
 - Question style: ${questionStyle}
-- Include outcome descriptions: ${includeDescriptions ? "yes, 2-3 sentences each" : "keep descriptions to one short sentence"}
+${outcomeProfileInstructions(
+  includeDescriptions
+    ? "the two-sentence summary a reader sees first"
+    : "one short sentence a reader sees first"
+)}
 - Create 5-8 questions with 3-4 answers each.
 - Questions must use real-life situations readers can relate to — everyday choices about conflict, trust, risk, loyalty, solitude, ambition, etc.
 - Do NOT place the reader inside the book's fictional world. Avoid in-world fantasy scenarios (e.g. "A dragon blocks your path", "You're in the enchanted forest", "The king summons you").
@@ -102,6 +119,9 @@ Always return quiz_title (repeat the current title if unchanged).
 If only the title or metadata changes, return empty outcomes and questions arrays.
 If outcomes or questions change, return the FULL updated arrays (not partial diffs).
 Keep existing outcome ids (outcome_1, outcome_2, ...) for unchanged characters so portraits can be preserved.
+Each outcome must include tagline and details in the section shape (label, kind, text, items).
+When the instruction does not ask to change result pages, copy each outcome's tagline, description, and details through unchanged.
+When the instruction does change characters or result pages, rewrite the tagline, description, and details so they stay specific to that result.
 Each question must include allow_multiple (true or false).
 Use the same outcome id scheme (outcome_1, outcome_2, ...) and keep weights aligned to those ids.
 Preserve quality: balanced scoring, 2+ answers per question, engaging copy.
@@ -126,4 +146,42 @@ Visual style: ${input.stylePrompt}
 ${input.artDirection ? `Additional art direction: ${input.artDirection}` : ""}
 
 Create a single character portrait suitable as a quiz result image. No text, logos, or watermarks. Focus on the character's personality and mood.`
+}
+
+type OutcomeDetailsPromptInput = {
+  bookTitle: string
+  quizTitle: string
+  outcomes: {
+    id: string
+    name: string
+    description: string
+    tagline: string
+  }[]
+  questionTexts: string[]
+}
+
+export function buildOutcomeDetailsPrompt(input: OutcomeDetailsPromptInput) {
+  const questions = input.questionTexts
+    .map((text) => text.trim())
+    .filter(Boolean)
+    .slice(0, 12)
+
+  return `You are writing result pages for a book personality quiz. A reader who lands on a result should understand who this character is and feel something about getting them.
+
+Book: ${input.bookTitle}
+Quiz: ${input.quizTitle}
+${questions.length > 0 ? `Quiz questions, for tone and themes:\n${questions.map((text) => `- ${text}`).join("\n")}` : ""}
+
+Write a profile for each outcome below. Return every id exactly as given. Do not add or drop outcomes. Keep the character's identity if a description is already present, and tighten it into a two-sentence summary.
+
+${input.outcomes
+  .map(
+    (outcome) =>
+      `- id: ${outcome.id}\n  name: ${outcome.name}\n  current tagline: ${outcome.tagline || "(none)"}\n  current description: ${outcome.description || "(none)"}`
+  )
+  .join("\n")}
+
+${outcomeProfileInstructions("exactly two sentences summarizing who this result is")}
+
+Do not mention that the copy was drafted for the author.`
 }

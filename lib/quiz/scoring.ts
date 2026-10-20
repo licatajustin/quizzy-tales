@@ -1,12 +1,10 @@
-import type { OutcomeRow } from "@/lib/quiz/types"
-
 type WeightedAnswer = {
   id: string
   weights: Record<string, number>
 }
 
 export function calculateWinningOutcome(
-  outcomes: OutcomeRow[],
+  outcomes: { id: string }[],
   selectedAnswerIds: string[],
   answers: WeightedAnswer[]
 ) {

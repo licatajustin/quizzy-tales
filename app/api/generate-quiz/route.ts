@@ -5,17 +5,18 @@ import { encodeNdjsonLine } from "@/lib/ai/ndjson"
 import { researchBook } from "@/lib/ai/book-research"
 import { requireAiAccessForKind, recordAiUsageForKind } from "@/lib/ai/auth"
 import { TEXT_MODEL } from "@/lib/ai/models"
+import { toGeneratedQuiz } from "@/lib/ai/outcome-profile"
 import { buildGenerateQuizPrompt } from "@/lib/ai/prompts"
 import {
   generateQuizRequestSchema,
-  generatedQuizSchema,
+  generatedQuizModelSchema,
 } from "@/lib/ai/schemas"
 
 function hasPartialQuiz(partial: Record<string, unknown>) {
   return Boolean(
     partial.quiz_title ||
-      (Array.isArray(partial.outcomes) && partial.outcomes.length > 0) ||
-      (Array.isArray(partial.questions) && partial.questions.length > 0)
+    (Array.isArray(partial.outcomes) && partial.outcomes.length > 0) ||
+    (Array.isArray(partial.questions) && partial.questions.length > 0)
   )
 }
 
@@ -23,10 +24,7 @@ export async function POST(request: Request) {
   const auth = await requireAiAccessForKind("generate-quiz")
 
   if ("error" in auth) {
-    return NextResponse.json(
-      { error: auth.error },
-      { status: auth.status }
-    )
+    return NextResponse.json({ error: auth.error }, { status: auth.status })
   }
 
   let body: unknown
@@ -92,7 +90,7 @@ export async function POST(request: Request) {
 
           const result = streamObject({
             model: TEXT_MODEL,
-            schema: generatedQuizSchema,
+            schema: generatedQuizModelSchema,
             prompt: buildGenerateQuizPrompt({
               bookTitle: input.book_title,
               synopsis: input.synopsis,
@@ -114,7 +112,7 @@ export async function POST(request: Request) {
             }
           }
 
-          const object = await result.object
+          const object = toGeneratedQuiz(await result.object)
           await recordAiUsageForKind(auth.userId, "generate-quiz")
 
           send({
@@ -158,7 +156,7 @@ export async function POST(request: Request) {
   try {
     const { object } = await generateObject({
       model: TEXT_MODEL,
-      schema: generatedQuizSchema,
+      schema: generatedQuizModelSchema,
       prompt: buildGenerateQuizPrompt({
         bookTitle: input.book_title,
         synopsis: input.synopsis,
@@ -177,7 +175,7 @@ export async function POST(request: Request) {
     await recordAiUsageForKind(auth.userId, "generate-quiz")
 
     return NextResponse.json({
-      quiz: object,
+      quiz: toGeneratedQuiz(object),
       research: bookResearchResult ?? undefined,
     })
   } catch (error) {

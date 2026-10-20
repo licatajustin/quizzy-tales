@@ -1,8 +1,16 @@
+import {
+  normalizeOutcomeDetails,
+  normalizeTagline,
+  type OutcomeDetailSection,
+} from "@/lib/quiz/outcome-details"
+
 export type BuilderOutcome = {
   id: string
   name: string
   description: string
   image_url: string
+  tagline: string
+  details: OutcomeDetailSection[]
 }
 
 export type BuilderAnswer = {
@@ -39,6 +47,36 @@ export function createEmptyBuilderDraft(): QuizBuilderDraft {
     cover_image_url: "",
     outcomes: [],
     questions: [],
+  }
+}
+
+export function hydrateBuilderDraft(draft: {
+  book_title?: string
+  quiz_title?: string
+  cover_image_url?: string
+  outcomes?: Array<{
+    id?: string
+    name?: string
+    description?: string
+    image_url?: string
+    tagline?: string
+    details?: unknown
+  }>
+  questions?: BuilderQuestion[]
+}): QuizBuilderDraft {
+  return {
+    book_title: draft.book_title ?? "",
+    quiz_title: draft.quiz_title ?? "",
+    cover_image_url: draft.cover_image_url ?? "",
+    outcomes: (draft.outcomes ?? []).map((outcome, index) => ({
+      id: outcome.id?.trim() || `outcome_${index + 1}`,
+      name: outcome.name ?? "",
+      description: outcome.description ?? "",
+      image_url: outcome.image_url ?? "",
+      tagline: normalizeTagline(outcome.tagline),
+      details: normalizeOutcomeDetails(outcome.details),
+    })),
+    questions: draft.questions ?? [],
   }
 }
 
@@ -119,6 +157,8 @@ export function builderDraftToGeneratedQuiz(draft: QuizBuilderDraft) {
       id: outcome.id,
       name: outcome.name.trim(),
       description: outcome.description.trim(),
+      tagline: normalizeTagline(outcome.tagline),
+      details: normalizeOutcomeDetails(outcome.details),
     })),
     questions: draft.questions.map((question) => ({
       question_text: question.question_text.trim(),
