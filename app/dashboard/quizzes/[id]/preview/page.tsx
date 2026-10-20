@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 
 import { QuizIntroHero } from "@/components/quiz/quiz-intro-hero"
 import { QuizPlayer } from "@/components/quiz/quiz-player"
+import { getAuthorDisplayName } from "@/lib/auth/author"
 import { getDashboardSession } from "@/lib/auth/dashboard-session"
 import { buildPublishedSnapshot } from "@/lib/quiz/published-snapshot"
 import { resolveQuestionsPerAttempt } from "@/lib/quiz/question-subset"
@@ -25,7 +26,8 @@ export default async function QuizPreviewPage({ params }: PreviewPageProps) {
     notFound()
   }
 
-  const snapshot = buildPublishedSnapshot(draft)
+  const authorDisplayName = await getAuthorDisplayName(supabase, user.id)
+  const snapshot = buildPublishedSnapshot(draft, { authorDisplayName })
 
   return (
     <div className="min-h-svh bg-background">

@@ -1,6 +1,7 @@
-import { revalidatePath } from "next/cache"
+import { revalidatePath, revalidateTag } from "next/cache"
 import type { SupabaseClient } from "@supabase/supabase-js"
 
+import { getAuthorDisplayName } from "@/lib/auth/author"
 import {
   buildPublishedSnapshot,
   validateQuizForPublish,
@@ -14,6 +15,7 @@ function revalidateQuizPaths(quizId: string, slug?: string) {
   revalidatePath(`/dashboard/quizzes/${quizId}/preview`)
   if (slug) {
     revalidatePath(`/q/${slug}`)
+    revalidateTag(`quiz-${slug}`, "max")
   }
 }
 
@@ -33,7 +35,11 @@ export async function executePublishQuiz(
     throw new Error(errors.join(" "))
   }
 
-  const snapshot = buildPublishedSnapshot(draft)
+  const authorDisplayName = await getAuthorDisplayName(
+    supabase,
+    draft.quiz.author_id
+  )
+  const snapshot = buildPublishedSnapshot(draft, { authorDisplayName })
 
   const { error } = await supabase
     .from("quizzes")

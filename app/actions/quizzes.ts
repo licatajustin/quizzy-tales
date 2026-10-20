@@ -1,14 +1,19 @@
 "use server"
 
-import { revalidatePath } from "next/cache"
+import { revalidatePath, revalidateTag } from "next/cache"
 import { redirect } from "next/navigation"
 
 import { incrementSubscriptionForPublish } from "@/app/actions/stripe"
+import { getAuthorDisplayName } from "@/lib/auth/author"
 import { decrementSubscriptionOnUnpublish } from "@/lib/stripe/unpublish-billing"
 import { getQuizDraft } from "@/lib/quiz/queries"
 import { executePublishQuiz } from "@/lib/quiz/publish-billing"
 import { validateQuestionsPerAttemptInput } from "@/lib/quiz/question-subset"
 import { validateQuizForPublish } from "@/lib/quiz/published-snapshot"
+import {
+  normalizeHttpUrl,
+  snapshotWithReaderLinks,
+} from "@/lib/quiz/reader-links"
 import { generateSlug } from "@/lib/quiz/slug"
 import {
   getAuthorBillingProfile,
@@ -134,6 +139,8 @@ export async function updateQuizDetails(
     quiz_title: string
     slug: string
     cover_image_url: string | null
+    book_url: string | null
+    newsletter_url: string | null
   }
 ): Promise<ActionResult> {
   const { supabase, draft } = await requireQuizOwner(quizId)
@@ -141,9 +148,19 @@ export async function updateQuizDetails(
   const bookTitle = input.book_title.trim()
   const quizTitle = input.quiz_title.trim()
   const slug = generateSlug(input.slug.trim() || bookTitle)
+  const bookLink = normalizeHttpUrl(input.book_url)
+  const newsletterLink = normalizeHttpUrl(input.newsletter_url)
 
   if (!bookTitle || !quizTitle || !slug) {
     return { error: "Book title, quiz title, and slug are required." }
+  }
+
+  if (!bookLink.ok) {
+    return { error: "Book link must be an http or https URL." }
+  }
+
+  if (!newsletterLink.ok) {
+    return { error: "Newsletter link must be an http or https URL." }
   }
 
   const uniqueSlug = await ensureUniqueSlug(
@@ -153,14 +170,41 @@ export async function updateQuizDetails(
     quizId
   )
 
+  const update: {
+    book_title: string
+    quiz_title: string
+    slug: string
+    cover_image_url: string | null
+    book_url: string | null
+    newsletter_url: string | null
+    published_snapshot?: NonNullable<typeof draft.quiz.published_snapshot>
+  } = {
+    book_title: bookTitle,
+    quiz_title: quizTitle,
+    slug: uniqueSlug,
+    cover_image_url: input.cover_image_url?.trim() || null,
+    book_url: bookLink.url,
+    newsletter_url: newsletterLink.url,
+  }
+
+  if (draft.quiz.status === "published" && draft.quiz.published_snapshot) {
+    const authorDisplayName = await getAuthorDisplayName(
+      supabase,
+      draft.quiz.author_id
+    )
+    update.published_snapshot = snapshotWithReaderLinks(
+      draft.quiz.published_snapshot,
+      {
+        bookUrl: bookLink.url,
+        newsletterUrl: newsletterLink.url,
+        authorDisplayName,
+      }
+    )
+  }
+
   const { error } = await supabase
     .from("quizzes")
-    .update({
-      book_title: bookTitle,
-      quiz_title: quizTitle,
-      slug: uniqueSlug,
-      cover_image_url: input.cover_image_url?.trim() || null,
-    })
+    .update(update)
     .eq("id", quizId)
 
   if (error) {
@@ -168,6 +212,12 @@ export async function updateQuizDetails(
   }
 
   revalidateQuizPaths(quizId, uniqueSlug)
+  if (update.published_snapshot) {
+    revalidateTag(`quiz-${draft.quiz.slug}`, "max")
+    if (uniqueSlug !== draft.quiz.slug) {
+      revalidateTag(`quiz-${uniqueSlug}`, "max")
+    }
+  }
   return { success: true }
 }
 
