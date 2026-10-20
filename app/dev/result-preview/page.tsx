@@ -8,6 +8,7 @@ import { QuizPlayer } from "@/components/quiz/quiz-player"
 import { QuizResult } from "@/components/quiz/quiz-result"
 import { QuizSeoContent } from "@/components/quiz/quiz-seo-content"
 import { QuizShareButton } from "@/components/quiz/quiz-share-button"
+import { QuizThemeScope } from "@/components/quiz/quiz-theme-scope"
 import { Button } from "@/components/ui/button"
 import { resolveQuestionsPerAttempt } from "@/lib/quiz/question-subset"
 import { resultSharePath } from "@/lib/quiz/share"
@@ -18,6 +19,7 @@ import {
   previewShares,
   restoreQuiz,
   sparseOutcome,
+  themedQuiz,
   windOutcome,
 } from "./fixtures"
 
@@ -34,17 +36,19 @@ function PreviewActions({
   outcomeId,
   outcomeName,
   outcomeTagline,
+  quizTitle,
 }: {
   outcomeId: string
   outcomeName: string
   outcomeTagline: string
+  quizTitle: string
 }) {
   return (
     <>
       <QuizShareButton
         quizId="preview"
         sessionId="preview"
-        quizTitle={previewQuiz.quiz_title}
+        quizTitle={quizTitle}
         outcomeName={outcomeName}
         outcomeTagline={outcomeTagline}
         resultPath={resultSharePath("preview", outcomeId)}
@@ -57,24 +61,39 @@ function PreviewActions({
   )
 }
 
-function PreviewResult({ outcome }: { outcome: PublishedOutcome }) {
+function PreviewResult({
+  outcome,
+  quizTitle,
+  bookTitle,
+  outcomes,
+  logoUrl,
+}: {
+  outcome: PublishedOutcome
+  quizTitle: string
+  bookTitle: string
+  outcomes: PublishedOutcome[]
+  logoUrl?: string | null
+}) {
   return (
     <QuizResult
       outcome={outcome}
-      quizTitle={previewQuiz.quiz_title}
+      quizTitle={quizTitle}
       shares={previewShares}
+      logoUrl={logoUrl}
+      logoAlt={`${bookTitle} logo`}
       actions={
         <PreviewActions
           outcomeId={outcome.id}
           outcomeName={outcome.name || "Result"}
           outcomeTagline={outcome.tagline?.trim() ?? ""}
+          quizTitle={quizTitle}
         />
       }
       exploreResults={
         <ExploreOtherResults
-          outcomes={previewQuiz.outcomes}
+          outcomes={outcomes}
           winnerId={outcome.id}
-          quizTitle={previewQuiz.quiz_title}
+          quizTitle={quizTitle}
         />
       }
     />
@@ -89,45 +108,55 @@ export default async function ResultPreviewPage({
   }
 
   const { variant } = await searchParams
+  const themed =
+    variant === "themed" ||
+    variant === "themed-landing" ||
+    variant === "themed-play"
+  const snapshot =
+    variant === "restore" ? restoreQuiz : themed ? themedQuiz : previewQuiz
   const questionCount = resolveQuestionsPerAttempt(
-    previewQuiz.random_question_subset,
-    previewQuiz.questions_per_attempt,
-    previewQuiz.questions.length
+    snapshot.random_question_subset,
+    snapshot.questions_per_attempt,
+    snapshot.questions.length
   )
-  const showPlayer = variant === "play" || variant === "restore"
-  const showLanding = variant === "landing" || variant === "gallery"
+  const showPlayer =
+    variant === "play" || variant === "restore" || variant === "themed-play"
+  const showHero = variant === "landing" || variant === "themed-landing"
+  const showSeo =
+    showPlayer ||
+    showHero ||
+    variant === "gallery" ||
+    variant === "themed-landing"
 
   return (
-    <div className="min-h-svh bg-background">
+    <QuizThemeScope theme={snapshot.theme} className="min-h-svh bg-background">
       {showPlayer ? (
         <QuizPlayer
           quizId={variant === "restore" ? "preview-restore" : "preview"}
           slug="preview"
-          snapshot={variant === "restore" ? restoreQuiz : previewQuiz}
+          snapshot={snapshot}
         />
       ) : null}
-      {variant === "landing" ? (
-        <QuizPlayer
-          quizId="preview-landing"
-          slug="preview"
-          snapshot={previewQuiz}
-        >
+      {showHero ? (
+        <QuizPlayer quizId="preview-landing" slug="preview" snapshot={snapshot}>
           <QuizIntroHero
-            snapshot={previewQuiz}
+            snapshot={snapshot}
             questionCount={questionCount}
-            outcomeCount={previewQuiz.outcomes.length}
+            outcomeCount={snapshot.outcomes.length}
           />
         </QuizPlayer>
       ) : null}
-      {showPlayer || showLanding ? (
-        <QuizSeoContent
-          snapshot={variant === "restore" ? restoreQuiz : previewQuiz}
-        />
+      {showSeo ? (
+        <QuizSeoContent snapshot={snapshot} />
       ) : (
         <PreviewResult
           outcome={variant === "sparse" ? sparseOutcome : windOutcome}
+          quizTitle={snapshot.quiz_title}
+          bookTitle={snapshot.book_title}
+          outcomes={snapshot.outcomes}
+          logoUrl={snapshot.theme?.logo_url}
         />
       )}
-    </div>
+    </QuizThemeScope>
   )
 }

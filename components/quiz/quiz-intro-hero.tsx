@@ -1,7 +1,9 @@
 import Image from "next/image"
 
+import { QuizAuthorLogo } from "@/components/quiz/quiz-author-logo"
 import { normalizeIntroText } from "@/lib/quiz/intro-text"
 import { formatQuestionCount } from "@/lib/quiz/question-subset"
+import { normalizeQuizTheme } from "@/lib/quiz/theme"
 import type { PublishedQuizSnapshot } from "@/lib/quiz/types"
 
 type QuizIntroHeroProps = {
@@ -18,6 +20,7 @@ export function QuizIntroHero({
   isPreview = false,
 }: QuizIntroHeroProps) {
   const intro = normalizeIntroText(snapshot.intro_text)
+  const logoUrl = normalizeQuizTheme(snapshot.theme).logo_url
 
   return (
     <>
@@ -26,6 +29,8 @@ export function QuizIntroHero({
           Author preview — draft content
         </p>
       ) : null}
+
+      <QuizAuthorLogo logoUrl={logoUrl} alt={`${snapshot.book_title} logo`} />
 
       {snapshot.cover_image_url ? (
         <div className="relative mx-auto aspect-[4/3] w-full max-w-md overflow-hidden rounded-2xl border border-border/60">

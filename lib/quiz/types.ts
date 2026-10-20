@@ -1,4 +1,5 @@
 import type { OutcomeDetailSection } from "@/lib/quiz/outcome-details"
+import type { QuizTheme } from "@/lib/quiz/theme"
 
 export type QuizStatus = "draft" | "published"
 
@@ -20,6 +21,7 @@ export type PublishedQuizSnapshot = {
   book_url?: string | null
   newsletter_url?: string | null
   author_display_name?: string | null
+  theme?: QuizTheme
   outcomes: PublishedOutcome[]
   questions: {
     id: string
@@ -59,6 +61,7 @@ export type QuizRow = {
   status: QuizStatus
   random_question_subset: boolean
   questions_per_attempt: number | null
+  theme: QuizTheme
   published_snapshot: PublishedQuizSnapshot | null
   created_at: string
   updated_at: string

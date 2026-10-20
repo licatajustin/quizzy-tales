@@ -53,5 +53,6 @@ export default async function Image({
     quizTitle: snapshot.quiz_title,
     bookTitle: snapshot.book_title,
     portraitUrl: outcome.image_url,
+    theme: snapshot.theme,
   })
 }

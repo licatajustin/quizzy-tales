@@ -25,6 +25,15 @@ export function buildCoverImagePath(
   return `authors/${authorId}/quizzes/${quizId}/cover/${randomUUID()}.${normalizedExtension}`
 }
 
+export function buildThemeLogoPath(
+  authorId: string,
+  quizId: string,
+  extension: "jpg" | "jpeg" | "png" | "webp"
+) {
+  const normalizedExtension = normalizeImageExtension(extension)
+  return `authors/${authorId}/quizzes/${quizId}/logo/${randomUUID()}.${normalizedExtension}`
+}
+
 export function getOutcomeImagesBucket() {
   return OUTCOME_IMAGES_BUCKET
 }

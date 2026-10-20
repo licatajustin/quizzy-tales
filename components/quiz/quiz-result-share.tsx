@@ -1,8 +1,10 @@
 import Image from "next/image"
 import Link from "next/link"
 
+import { QuizAuthorLogo } from "@/components/quiz/quiz-author-logo"
 import { Button } from "@/components/ui/button"
 import { normalizeTagline } from "@/lib/quiz/outcome-details"
+import { normalizeQuizTheme } from "@/lib/quiz/theme"
 import type { PublishedOutcome, PublishedQuizSnapshot } from "@/lib/quiz/types"
 
 type QuizResultShareProps = {
@@ -18,9 +20,11 @@ export function QuizResultShare({
 }: QuizResultShareProps) {
   const tagline = normalizeTagline(outcome.tagline)
   const description = outcome.description.trim()
+  const logoUrl = normalizeQuizTheme(snapshot.theme).logo_url
 
   return (
     <div className="mx-auto flex min-h-[70vh] w-full max-w-2xl flex-col justify-center gap-8 px-6 py-12">
+      <QuizAuthorLogo logoUrl={logoUrl} alt={`${snapshot.book_title} logo`} />
       {outcome.image_url ? (
         <div className="relative mx-auto aspect-square w-full max-w-xs overflow-hidden rounded-2xl border border-border/60">
           <Image

@@ -16,6 +16,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { normalizeTagline } from "@/lib/quiz/outcome-details"
+import { useQuizThemeAttrs } from "@/components/quiz/quiz-theme-scope"
 import type { PublishedOutcome } from "@/lib/quiz/types"
 import { cn } from "@/lib/utils"
 
@@ -52,6 +53,7 @@ export function ExploreOtherResults({
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [active, setActive] = useState<PublishedOutcome | null>(null)
   const open = selectedId !== null && active !== null
+  const themeAttrs = useQuizThemeAttrs()
 
   if (others.length === 0) {
     return null
@@ -126,7 +128,7 @@ export function ExploreOtherResults({
           }
         }}
       >
-        <DialogContent className="gap-0 p-0">
+        <DialogContent className="gap-0 p-0" {...(themeAttrs ?? {})}>
           {active ? (
             <div className="max-h-[min(92dvh,52rem)] overflow-y-auto overscroll-contain px-5 pt-12 pb-6 sm:px-6">
               <DialogTitle asChild>

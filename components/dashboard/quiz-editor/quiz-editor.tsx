@@ -14,6 +14,7 @@ import {
 } from "@/app/actions/stripe"
 import { showAiLimitToast } from "@/lib/ai/show-ai-limit-toast"
 import { DetailsTab } from "@/components/dashboard/quiz-editor/details-tab"
+import { DesignTab } from "@/components/dashboard/quiz-editor/design-tab"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -212,6 +213,7 @@ export function QuizEditor({ draft, access, hasLiveChanges }: QuizEditorProps) {
       <Tabs defaultValue="details">
         <TabsList>
           <TabsTrigger value="details">Details</TabsTrigger>
+          <TabsTrigger value="design">Design</TabsTrigger>
           <TabsTrigger value="outcomes">
             Outcomes ({draft.outcomes.length})
           </TabsTrigger>
@@ -223,6 +225,13 @@ export function QuizEditor({ draft, access, hasLiveChanges }: QuizEditorProps) {
 
         <TabsContent value="details" className="mt-6">
           <DetailsTab quiz={draft.quiz} />
+        </TabsContent>
+        <TabsContent value="design" className="mt-6">
+          <DesignTab
+            quiz={draft.quiz}
+            outcomes={draft.outcomes}
+            questionCount={draft.questions.length}
+          />
         </TabsContent>
         <TabsContent value="outcomes" className="mt-6">
           <OutcomesTab

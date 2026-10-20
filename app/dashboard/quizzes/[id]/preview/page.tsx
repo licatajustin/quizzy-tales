@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 
 import { QuizIntroHero } from "@/components/quiz/quiz-intro-hero"
 import { QuizPlayer } from "@/components/quiz/quiz-player"
+import { QuizThemeScope } from "@/components/quiz/quiz-theme-scope"
 import { getAuthorDisplayName } from "@/lib/auth/author"
 import { getDashboardSession } from "@/lib/auth/dashboard-session"
 import { buildPublishedSnapshot } from "@/lib/quiz/published-snapshot"
@@ -30,7 +31,7 @@ export default async function QuizPreviewPage({ params }: PreviewPageProps) {
   const snapshot = buildPublishedSnapshot(draft, { authorDisplayName })
 
   return (
-    <div className="min-h-svh bg-background">
+    <QuizThemeScope theme={snapshot.theme} className="min-h-svh bg-background">
       <QuizPlayer quizId={draft.quiz.id} snapshot={snapshot} isPreview>
         <QuizIntroHero
           snapshot={snapshot}
@@ -43,6 +44,6 @@ export default async function QuizPreviewPage({ params }: PreviewPageProps) {
           isPreview
         />
       </QuizPlayer>
-    </div>
+    </QuizThemeScope>
   )
 }

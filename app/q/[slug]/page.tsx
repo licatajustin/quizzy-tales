@@ -6,6 +6,7 @@ import { QuizIntroHero } from "@/components/quiz/quiz-intro-hero"
 import { QuizPlayer } from "@/components/quiz/quiz-player"
 import { QuizPublicFooter } from "@/components/quiz/quiz-public-footer"
 import { QuizSeoContent } from "@/components/quiz/quiz-seo-content"
+import { QuizThemeScope } from "@/components/quiz/quiz-theme-scope"
 import { buildQuizPageSchema } from "@/lib/seo/json-ld"
 import { quizPageDescription } from "@/lib/quiz/intro-text"
 import { getPublicQuizBySlug } from "@/lib/quiz/public-quiz"
@@ -95,7 +96,7 @@ export default async function PublicQuizPage({ params }: PublicQuizPageProps) {
   const outcomeNames = snapshot.outcomes.map((outcome) => outcome.name)
 
   return (
-    <div className="min-h-svh bg-background">
+    <QuizThemeScope theme={snapshot.theme} className="min-h-svh bg-background">
       <JsonLd
         data={buildQuizPageSchema({
           slug,
@@ -114,6 +115,6 @@ export default async function PublicQuizPage({ params }: PublicQuizPageProps) {
       </QuizPlayer>
       <QuizSeoContent snapshot={snapshot} />
       <QuizPublicFooter />
-    </div>
+    </QuizThemeScope>
   )
 }

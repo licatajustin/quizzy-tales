@@ -2,7 +2,7 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-@custom-variant dark (&:is(.dark *));
+@custom-variant dark (&:is(.dark *, [data-quiz-scheme="dark"] *):not(:is([data-quiz-scheme="light"], [data-quiz-scheme="light"] *)));
 
 @theme inline {
     --font-heading: var(--font-sans);
@@ -136,4 +136,21 @@ html[data-quiz-attempt="pending"] .quiz-attempt-pending {
 
 html[data-quiz-attempt="pending"] .quiz-attempt-placeholder {
   display: block;
+}
+
+[data-quiz-font="serif"] :is(h1, h2, h3, h4, .font-heading) {
+  font-family: var(--font-quiz-serif), Georgia, "Iowan Old Style", "Palatino Linotype", serif;
+}
+
+[data-quiz-font="story"] :is(h1, h2, h3, h4, .font-heading) {
+  font-family: var(--font-quiz-story), Georgia, "Palatino Linotype", serif;
+}
+
+[data-quiz-font="modern"] :is(h1, h2, h3, h4, .font-heading) {
+  font-family: var(--font-quiz-modern), var(--font-sans), sans-serif;
+}
+
+[data-quiz-corners="sharp"] :is([class*="rounded-full"], [class*="rounded-4xl"]),
+[data-quiz-corners="sharp"]:is([class*="rounded-full"], [class*="rounded-4xl"]) {
+  border-radius: 0;
 }

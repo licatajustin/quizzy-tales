@@ -20,6 +20,7 @@ import {
   snapshotWithReaderLinks,
 } from "@/lib/quiz/reader-links"
 import { generateSlug } from "@/lib/quiz/slug"
+import { isPlainObject, persistQuizTheme } from "@/lib/quiz/theme"
 import {
   getAuthorBillingProfile,
   getPublishedQuizCount,
@@ -31,6 +32,7 @@ export type ActionResult = {
   error?: string
   success?: boolean
   requiresBilling?: boolean
+  theme?: Record<string, string>
 }
 
 async function requireAuthor() {
@@ -264,6 +266,32 @@ export async function updateQuizQuestionSettings(
 
   revalidateQuizPaths(quizId, draft.quiz.slug)
   return { success: true }
+}
+
+export async function updateQuizTheme(
+  quizId: string,
+  input: unknown
+): Promise<ActionResult> {
+  const { supabase, draft } = await requireQuizOwner(quizId)
+
+  if (!isPlainObject(input)) {
+    return { error: "Design settings must be an object." }
+  }
+
+  const theme = persistQuizTheme(input)
+  const { error } = await supabase
+    .from("quizzes")
+    .update({ theme })
+    .eq("id", quizId)
+
+  if (error) {
+    return { error: error.message }
+  }
+
+  // The public quiz reads the published snapshot, so a design save stays
+  // on the draft until the author updates the live quiz.
+  revalidateQuizPaths(quizId, draft.quiz.slug)
+  return { success: true, theme }
 }
 
 export async function deleteQuiz(quizId: string): Promise<ActionResult> {

@@ -11,6 +11,7 @@ import Image from "next/image"
 import { RotateCcw } from "lucide-react"
 
 import { ExploreOtherResults } from "@/components/quiz/explore-other-results"
+import { QuizAuthorLogo } from "@/components/quiz/quiz-author-logo"
 import { QuizResult } from "@/components/quiz/quiz-result"
 import { QuizResultLinks } from "@/components/quiz/quiz-result-links"
 import { QuizShareButton } from "@/components/quiz/quiz-share-button"
@@ -562,6 +563,11 @@ export function QuizPlayer({
                 </p>
               ) : null}
 
+              <QuizAuthorLogo
+                logoUrl={snapshot.theme?.logo_url}
+                alt={`${snapshot.book_title} logo`}
+              />
+
               {snapshot.cover_image_url ? (
                 <div className="relative mx-auto aspect-[4/3] w-full max-w-md overflow-hidden rounded-2xl border border-border/60">
                   <Image
@@ -617,6 +623,8 @@ export function QuizPlayer({
           outcome={winningOutcome}
           quizTitle={snapshot.quiz_title}
           shares={scoredAttempt.shares}
+          logoUrl={snapshot.theme?.logo_url}
+          logoAlt={`${snapshot.book_title} logo`}
           exploreResults={
             <ExploreOtherResults
               outcomes={outcomes}
