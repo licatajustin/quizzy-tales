@@ -29,7 +29,7 @@ export async function executePublishQuiz(
     throw new Error("Quiz not found.")
   }
 
-  const errors = validateQuizForPublish(draft)
+  const { errors } = validateQuizForPublish(draft)
 
   if (errors.length > 0) {
     throw new Error(errors.join(" "))

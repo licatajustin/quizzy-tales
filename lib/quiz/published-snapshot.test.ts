@@ -36,6 +36,8 @@ function draft(overrides: Partial<QuizRow> = {}): QuizDraft {
         description: "A maker",
         image_url: null,
         sort_order: 0,
+        tagline: "",
+        details: [],
       },
       {
         id: "outcome-2",
@@ -44,6 +46,8 @@ function draft(overrides: Partial<QuizRow> = {}): QuizDraft {
         description: "A reader",
         image_url: null,
         sort_order: 1,
+        tagline: "",
+        details: [],
       },
     ],
     questions: [

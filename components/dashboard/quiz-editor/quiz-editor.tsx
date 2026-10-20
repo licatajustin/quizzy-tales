@@ -61,7 +61,8 @@ type QuizEditorProps = {
 export function QuizEditor({ draft, access, hasLiveChanges }: QuizEditorProps) {
   const router = useRouter()
   const [isCheckoutPending, startCheckout] = useTransition()
-  const validationErrors = validateQuizForPublish(draft)
+  const { errors: validationErrors, warnings: publishWarnings } =
+    validateQuizForPublish(draft)
   const canPublishQuiz = validationErrors.length === 0
   const quizPath = `/dashboard/quizzes/${draft.quiz.id}`
 
@@ -147,6 +148,13 @@ export function QuizEditor({ draft, access, hasLiveChanges }: QuizEditorProps) {
             <p className="text-xs text-muted-foreground">
               Going live uses one slot on your author plan.
             </p>
+          ) : null}
+          {publishWarnings.length > 0 ? (
+            <ul className="space-y-1 text-xs text-amber-600 dark:text-amber-400">
+              {publishWarnings.map((warning) => (
+                <li key={warning}>{warning}</li>
+              ))}
+            </ul>
           ) : null}
         </div>
 

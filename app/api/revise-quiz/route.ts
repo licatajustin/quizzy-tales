@@ -3,9 +3,10 @@ import { generateObject } from "ai"
 
 import { requireAiAccessForKind, recordAiUsageForKind } from "@/lib/ai/auth"
 import { TEXT_MODEL } from "@/lib/ai/models"
+import { toQuizRevisionPatch } from "@/lib/ai/outcome-profile"
 import { buildReviseQuizPrompt } from "@/lib/ai/prompts"
 import {
-  quizRevisionPatchSchema,
+  quizRevisionPatchModelSchema,
   reviseQuizRequestSchema,
 } from "@/lib/ai/schemas"
 import { draftToAiRevisionContext } from "@/lib/quiz/ai-save"
@@ -15,10 +16,7 @@ export async function POST(request: Request) {
   const auth = await requireAiAccessForKind("revise-quiz")
 
   if ("error" in auth) {
-    return NextResponse.json(
-      { error: auth.error },
-      { status: auth.status }
-    )
+    return NextResponse.json({ error: auth.error }, { status: auth.status })
   }
 
   let body: unknown
@@ -51,9 +49,9 @@ export async function POST(request: Request) {
   )
 
   try {
-    const { object } = await generateObject({
+    const { object: model } = await generateObject({
       model: TEXT_MODEL,
-      schema: quizRevisionPatchSchema,
+      schema: quizRevisionPatchModelSchema,
       prompt: buildReviseQuizPrompt({
         bookTitle: draft.quiz.book_title,
         quizTitle: draft.quiz.quiz_title,
@@ -61,6 +59,8 @@ export async function POST(request: Request) {
         currentQuizJson,
       }),
     })
+
+    const object = toQuizRevisionPatch(model)
 
     await auth.supabase.from("quiz_ai_messages").insert([
       {

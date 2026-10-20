@@ -1,4 +1,16 @@
+import type { OutcomeDetailSection } from "@/lib/quiz/outcome-details"
+
 export type QuizStatus = "draft" | "published"
+
+export type PublishedOutcome = {
+  id: string
+  name: string
+  description: string
+  image_url: string | null
+  sort_order: number
+  tagline?: string
+  details?: OutcomeDetailSection[]
+}
 
 export type PublishedQuizSnapshot = {
   quiz_title: string
@@ -7,13 +19,7 @@ export type PublishedQuizSnapshot = {
   book_url?: string | null
   newsletter_url?: string | null
   author_display_name?: string | null
-  outcomes: {
-    id: string
-    name: string
-    description: string
-    image_url: string | null
-    sort_order: number
-  }[]
+  outcomes: PublishedOutcome[]
   questions: {
     id: string
     question_text: string
@@ -63,6 +69,8 @@ export type OutcomeRow = {
   description: string
   image_url: string | null
   sort_order: number
+  tagline: string
+  details: OutcomeDetailSection[]
 }
 
 export type QuestionRow = {

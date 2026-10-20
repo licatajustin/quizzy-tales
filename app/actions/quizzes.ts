@@ -9,6 +9,10 @@ import { decrementSubscriptionOnUnpublish } from "@/lib/stripe/unpublish-billing
 import { getQuizDraft } from "@/lib/quiz/queries"
 import { executePublishQuiz } from "@/lib/quiz/publish-billing"
 import { validateQuestionsPerAttemptInput } from "@/lib/quiz/question-subset"
+import {
+  normalizeOutcomeDetails,
+  normalizeTagline,
+} from "@/lib/quiz/outcome-details"
 import { validateQuizForPublish } from "@/lib/quiz/published-snapshot"
 import {
   normalizeHttpUrl,
@@ -321,6 +325,8 @@ export async function updateOutcome(
     name: string
     description: string
     image_url: string | null
+    tagline?: string
+    details?: unknown
   }
 ): Promise<ActionResult> {
   const { supabase } = await requireAuthor()
@@ -337,13 +343,29 @@ export async function updateOutcome(
 
   await requireQuizOwner(outcome.quiz_id)
 
+  const update: {
+    name: string
+    description: string
+    image_url: string | null
+    tagline?: string
+    details?: ReturnType<typeof normalizeOutcomeDetails>
+  } = {
+    name: input.name.trim(),
+    description: input.description.trim(),
+    image_url: input.image_url?.trim() || null,
+  }
+
+  if (input.tagline !== undefined) {
+    update.tagline = normalizeTagline(input.tagline)
+  }
+
+  if (input.details !== undefined) {
+    update.details = normalizeOutcomeDetails(input.details)
+  }
+
   const { error } = await supabase
     .from("outcomes")
-    .update({
-      name: input.name.trim(),
-      description: input.description.trim(),
-      image_url: input.image_url?.trim() || null,
-    })
+    .update(update)
     .eq("id", outcomeId)
 
   if (error) {
@@ -651,7 +673,7 @@ export async function publishQuiz(quizId: string): Promise<ActionResult> {
     return { error: "Author profile not found." }
   }
 
-  const errors = validateQuizForPublish(draft)
+  const { errors } = validateQuizForPublish(draft)
 
   if (errors.length > 0) {
     return { error: errors.join(" ") }

@@ -1,4 +1,5 @@
 import type { GeneratedQuiz } from "@/lib/ai/schemas"
+import { visibleOutcomeDetails } from "@/lib/quiz/outcome-details"
 import { Badge } from "@/components/ui/badge"
 import {
   Card,
@@ -16,10 +17,7 @@ export function AiQuizPreview({ quiz }: AiQuizPreviewProps) {
   return (
     <div className="space-y-6">
       <div>
-        <h3
-          className="truncate text-lg font-semibold"
-          title={quiz.quiz_title}
-        >
+        <h3 className="truncate text-lg font-semibold" title={quiz.quiz_title}>
           {quiz.quiz_title}
         </h3>
         <p className="text-sm text-muted-foreground">
@@ -44,9 +42,32 @@ export function AiQuizPreview({ quiz }: AiQuizPreviewProps) {
                 <p className="font-medium">{outcome.name}</p>
                 <Badge variant="secondary">{outcome.id}</Badge>
               </div>
-              <p className="mt-2 text-sm text-muted-foreground">
-                {outcome.description}
-              </p>
+              {outcome.tagline ? (
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {outcome.tagline}
+                </p>
+              ) : null}
+              {outcome.description ? (
+                <p className="mt-2 text-sm text-muted-foreground">
+                  {outcome.description}
+                </p>
+              ) : null}
+              {visibleOutcomeDetails(outcome.details).length > 0 ? (
+                <ul className="mt-3 space-y-1 text-xs text-muted-foreground">
+                  {visibleOutcomeDetails(outcome.details).map(
+                    (section, index) => (
+                      <li key={`${section.label}-${index}`}>
+                        <span className="font-medium text-foreground">
+                          {section.label || "Section"}
+                        </span>
+                        {section.kind === "text"
+                          ? ` — ${section.value}`
+                          : `: ${section.value.join(", ")}`}
+                      </li>
+                    )
+                  )}
+                </ul>
+              ) : null}
             </div>
           ))}
         </CardContent>

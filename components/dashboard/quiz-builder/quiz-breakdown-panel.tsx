@@ -132,6 +132,11 @@ export function QuizBreakdownPanel({ draft }: QuizBreakdownPanelProps) {
                         <p className="font-medium">
                           {outcome.name.trim() || "Untitled outcome"}
                         </p>
+                        {outcome.tagline?.trim() ? (
+                          <p className="text-xs text-muted-foreground">
+                            {outcome.tagline}
+                          </p>
+                        ) : null}
                         {outcome.description.trim() ? (
                           <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
                             {outcome.description}

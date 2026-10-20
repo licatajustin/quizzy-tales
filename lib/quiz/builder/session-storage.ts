@@ -1,6 +1,10 @@
-import type { BuilderChatMessage, QuizBuilderDraft } from "@/lib/quiz/builder/types"
-import { createEmptyBuilderDraft } from "@/lib/quiz/builder/types"
 import { QUIZ_BUILDER_OPENING_MESSAGE } from "@/lib/quiz/builder/prompts"
+import {
+  createEmptyBuilderDraft,
+  hydrateBuilderDraft,
+  type BuilderChatMessage,
+  type QuizBuilderDraft,
+} from "@/lib/quiz/builder/types"
 
 const BUILDER_SESSION_KEY = "quizzy-tales:builder-session"
 
@@ -75,7 +79,7 @@ export function createRestoredBuilderState(session: BuilderSession | null) {
   }
 
   return {
-    draft: session.draft,
+    draft: hydrateBuilderDraft(session.draft),
     messages:
       session.messages.length > 0
         ? session.messages
