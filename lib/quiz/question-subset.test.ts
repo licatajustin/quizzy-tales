@@ -3,11 +3,13 @@ import { describe, it } from "node:test"
 
 import { calculateWinningOutcome } from "./scoring.ts"
 import {
+  attemptRestoreBootstrapScript,
   attemptStorageKey,
   fisherYatesShuffle,
   formatQuestionCount,
   parseStoredQuizAttempt,
   pickRandomQuestions,
+  quizProgressPercent,
   resolvePersistedQuestions,
   resolveQuestionsPerAttempt,
   selectionForShownQuestions,
@@ -113,6 +115,19 @@ describe("selectionForShownQuestions", () => {
     assert.deepEqual(selection.answerIds, ["q1-a"])
   })
 
+  it("orders answers by shown question order, oldest first", () => {
+    const selection = selectionForShownQuestions(
+      [
+        { id: "q1", answers: [{ id: "a1" }] },
+        { id: "q2", answers: [{ id: "a2" }] },
+      ],
+      { q2: ["a2"], q1: ["a1"] }
+    )
+
+    assert.deepEqual(selection.answerIds, ["a1", "a2"])
+    assert.deepEqual(Object.keys(selection.selectedByQuestion), ["q1", "q2"])
+  })
+
   it("lets scoring ignore a high-weight answer from a hidden question", () => {
     const outcomes = [
       {
@@ -164,6 +179,29 @@ describe("attempt storage", () => {
     assert.equal(
       attemptStorageKey("quiz-1", true),
       "quizzy:attempt:preview:quiz-1"
+    )
+  })
+})
+
+describe("quiz progress", () => {
+  it("starts at 0% and reaches 100% only when every question is answered", () => {
+    assert.equal(quizProgressPercent(0, 6), 0)
+    assert.equal(quizProgressPercent(1, 6), (1 / 6) * 100)
+    assert.equal(quizProgressPercent(5, 6), (5 / 6) * 100)
+    assert.equal(quizProgressPercent(6, 6), 100)
+    assert.equal(quizProgressPercent(0, 0), 0)
+  })
+})
+
+describe("attempt restore bootstrap", () => {
+  it("hides the intro only when a saved attempt exists", () => {
+    const script = attemptRestoreBootstrapScript("quizzy:attempt:quiz-1")
+    assert.match(script, /localStorage\.getItem\("quizzy:attempt:quiz-1"\)/)
+    assert.match(script, /data-quiz-attempt/)
+    assert.equal(script.includes("</script>"), false)
+    assert.equal(
+      attemptRestoreBootstrapScript("a</script>").includes("</script>"),
+      false
     )
   })
 })

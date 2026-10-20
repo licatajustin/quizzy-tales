@@ -127,3 +127,13 @@
     @apply font-sans;
     }
 }
+
+/* Set by the quiz attempt bootstrap before paint. Keeps a saved attempt
+   from flashing the intro, while the intro stays in the server HTML. */
+html[data-quiz-attempt="pending"] .quiz-attempt-pending {
+  display: none;
+}
+
+html[data-quiz-attempt="pending"] .quiz-attempt-placeholder {
+  display: block;
+}
