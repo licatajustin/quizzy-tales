@@ -25,6 +25,7 @@ function draft(overrides: Partial<QuizDraft> = {}): QuizDraft {
       slug: "fae-quiz",
       book_title: "The Book",
       quiz_title: "Which one are you?",
+      intro_text: null,
       cover_image_url: "https://example.com/cover.jpg",
       book_url: null,
       newsletter_url: null,
@@ -202,6 +203,25 @@ describe("published snapshots", () => {
 
     assert.equal(snapshot.outcomes[0]?.tagline, "")
     assert.deepEqual(snapshot.outcomes[0]?.details, [])
+    assert.equal(snapshot.intro_text, null)
+  })
+
+  it("stores a trimmed hook line and ignores a blank one", () => {
+    const withHook = buildPublishedSnapshot(
+      draft({
+        quiz: {
+          intro_text: "  Which court would claim you? \n",
+        } as QuizDraft["quiz"],
+      })
+    )
+    assert.equal(withHook.intro_text, "Which court would claim you?")
+
+    const blank = buildPublishedSnapshot(
+      draft({
+        quiz: { intro_text: "   " } as QuizDraft["quiz"],
+      })
+    )
+    assert.equal(blank.intro_text, null)
   })
 
   it("does not treat a missing profile as an unpublished change", () => {
@@ -224,6 +244,38 @@ describe("published snapshots", () => {
         buildPublishedSnapshot(current)
       ),
       false
+    )
+  })
+
+  it("does not treat a missing hook line as an unpublished change", () => {
+    const current = draft()
+    const published = buildPublishedSnapshot(current)
+    const legacy = { ...published }
+    delete legacy.intro_text
+
+    assert.equal(
+      hasUnpublishedChanges(
+        { ...current.quiz, published_snapshot: legacy },
+        buildPublishedSnapshot(current)
+      ),
+      false
+    )
+  })
+
+  it("treats a new hook line as an unpublished change", () => {
+    const current = draft({
+      quiz: { intro_text: "Which court would claim you?" } as QuizDraft["quiz"],
+    })
+
+    assert.equal(
+      hasUnpublishedChanges(
+        {
+          ...current.quiz,
+          published_snapshot: buildPublishedSnapshot(draft()),
+        },
+        buildPublishedSnapshot(current)
+      ),
+      true
     )
   })
 })

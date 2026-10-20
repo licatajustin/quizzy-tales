@@ -9,6 +9,7 @@ import { decrementSubscriptionOnUnpublish } from "@/lib/stripe/unpublish-billing
 import { getQuizDraft } from "@/lib/quiz/queries"
 import { executePublishQuiz } from "@/lib/quiz/publish-billing"
 import { validateQuestionsPerAttemptInput } from "@/lib/quiz/question-subset"
+import { normalizeIntroText } from "@/lib/quiz/intro-text"
 import {
   normalizeOutcomeDetails,
   normalizeTagline,
@@ -93,7 +94,7 @@ function revalidateQuizPaths(quizId: string, slug?: string) {
   revalidatePath(`/dashboard/quizzes/${quizId}`)
   revalidatePath(`/dashboard/quizzes/${quizId}/preview`)
   if (slug) {
-    revalidatePath(`/q/${slug}`)
+    revalidatePath(`/q/${slug}`, "layout")
   }
 }
 
@@ -142,6 +143,7 @@ export async function updateQuizDetails(
     book_title: string
     quiz_title: string
     slug: string
+    intro_text: string | null
     cover_image_url: string | null
     book_url: string | null
     newsletter_url: string | null
@@ -178,6 +180,7 @@ export async function updateQuizDetails(
     book_title: string
     quiz_title: string
     slug: string
+    intro_text: string | null
     cover_image_url: string | null
     book_url: string | null
     newsletter_url: string | null
@@ -186,6 +189,7 @@ export async function updateQuizDetails(
     book_title: bookTitle,
     quiz_title: quizTitle,
     slug: uniqueSlug,
+    intro_text: normalizeIntroText(input.intro_text),
     cover_image_url: input.cover_image_url?.trim() || null,
     book_url: bookLink.url,
     newsletter_url: newsletterLink.url,

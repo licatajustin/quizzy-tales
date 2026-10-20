@@ -20,6 +20,8 @@ import {
   FieldLabel,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { INTRO_TEXT_MAX } from "@/lib/quiz/intro-text"
 import { normalizeHttpUrl } from "@/lib/quiz/reader-links"
 import { generateSlug } from "@/lib/quiz/slug"
 import type { QuizRow } from "@/lib/quiz/types"
@@ -33,6 +35,7 @@ type DetailsTabProps = {
 export function DetailsTab({ quiz }: DetailsTabProps) {
   const [bookTitle, setBookTitle] = useState(quiz.book_title)
   const [quizTitle, setQuizTitle] = useState(quiz.quiz_title)
+  const [introText, setIntroText] = useState(quiz.intro_text ?? "")
   const [slug, setSlug] = useState(quiz.slug)
   const [bookUrl, setBookUrl] = useState(quiz.book_url ?? "")
   const [newsletterUrl, setNewsletterUrl] = useState(quiz.newsletter_url ?? "")
@@ -79,6 +82,7 @@ export function DetailsTab({ quiz }: DetailsTabProps) {
         book_title: bookTitle,
         quiz_title: quizTitle,
         slug: generateSlug(slug),
+        intro_text: introText,
         cover_image_url: coverImageUrlRef.current,
         book_url: nextBookLink.url,
         newsletter_url: nextNewsletterLink.url,
@@ -99,7 +103,7 @@ export function DetailsTab({ quiz }: DetailsTabProps) {
         clearTimeout(timerRef.current)
       }
     }
-  }, [bookTitle, quizTitle, slug, bookUrl, newsletterUrl, quiz.id])
+  }, [bookTitle, introText, quizTitle, slug, bookUrl, newsletterUrl, quiz.id])
 
   return (
     <Card className="bg-card">
@@ -107,10 +111,10 @@ export function DetailsTab({ quiz }: DetailsTabProps) {
         <div className="space-y-1">
           <CardTitle>Quiz details</CardTitle>
           <CardDescription>
-            Set the title, share link, cover image, and the book or newsletter
-            links readers see on the result screen. Saves as you type. On a live
-            quiz, those links update as soon as they save. A draft shows them
-            after you publish.
+            Set the title, hook line, share link, cover image, and the book or
+            newsletter links readers see on the result screen. Saves as you
+            type. On a live quiz, those links update as soon as they save. A
+            draft shows them after you publish.
           </CardDescription>
         </div>
         <p className="shrink-0 text-xs text-muted-foreground">
@@ -142,8 +146,22 @@ export function DetailsTab({ quiz }: DetailsTabProps) {
               onChange={(event) => setQuizTitle(event.target.value)}
             />
             <FieldDescription>
-              The hook on your quiz page. Try &ldquo;Which character are
-              you?&rdquo;
+              The title readers see. Try &ldquo;Which character are you?&rdquo;
+            </FieldDescription>
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="intro_text">Hook line</FieldLabel>
+            <Textarea
+              id="intro_text"
+              value={introText}
+              maxLength={INTRO_TEXT_MAX}
+              rows={3}
+              onChange={(event) => setIntroText(event.target.value)}
+              placeholder="A short line readers see before they start."
+            />
+            <FieldDescription>
+              Optional. Shown under the title, and used as the description when
+              someone shares your quiz. Leave blank for the standard line.
             </FieldDescription>
           </Field>
           <Field>
