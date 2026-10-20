@@ -1,3 +1,7 @@
+import {
+  formatQuestionCount,
+  resolveQuestionsPerAttempt,
+} from "@/lib/quiz/question-subset"
 import type { PublishedQuizSnapshot } from "@/lib/quiz/types"
 
 type QuizSeoContentProps = {
@@ -11,6 +15,11 @@ export function QuizSeoContent({ snapshot }: QuizSeoContentProps) {
   const questions = [...snapshot.questions].sort(
     (a, b) => a.sort_order - b.sort_order
   )
+  const shownCount = resolveQuestionsPerAttempt(
+    snapshot.random_question_subset,
+    snapshot.questions_per_attempt,
+    questions.length
+  )
   const sampleQuestion = questions[0]?.question_text
 
   return (
@@ -22,8 +31,9 @@ export function QuizSeoContent({ snapshot }: QuizSeoContentProps) {
         About {snapshot.quiz_title}
       </h2>
       <p className="mt-3 leading-relaxed">
-        Take this personality quiz inspired by <strong>{snapshot.book_title}</strong>
-        . Answer {questions.length} questions to discover which character you are
+        Take this personality quiz inspired by{" "}
+        <strong>{snapshot.book_title}</strong>. Answer{" "}
+        {formatQuestionCount(shownCount)} to discover which character you are
         most like — then share your result with friends and book clubs.
       </p>
 
@@ -35,11 +45,15 @@ export function QuizSeoContent({ snapshot }: QuizSeoContentProps) {
 
       {outcomes.length > 0 ? (
         <div className="mt-6">
-          <h3 className="font-medium text-foreground">Possible character results</h3>
+          <h3 className="font-medium text-foreground">
+            Possible character results
+          </h3>
           <ul className="mt-3 space-y-3">
             {outcomes.map((outcome) => (
               <li key={outcome.id}>
-                <span className="font-medium text-foreground">{outcome.name}</span>
+                <span className="font-medium text-foreground">
+                  {outcome.name}
+                </span>
                 {outcome.description ? (
                   <span> — {outcome.description}</span>
                 ) : null}

@@ -23,6 +23,8 @@ export type PublishedQuizSnapshot = {
       sort_order: number
     }[]
   }[]
+  random_question_subset?: boolean
+  questions_per_attempt?: number | null
   published_at: string
 }
 
@@ -42,6 +44,8 @@ export type QuizRow = {
   quiz_title: string
   cover_image_url: string | null
   status: QuizStatus
+  random_question_subset: boolean
+  questions_per_attempt: number | null
   published_snapshot: PublishedQuizSnapshot | null
   created_at: string
   updated_at: string

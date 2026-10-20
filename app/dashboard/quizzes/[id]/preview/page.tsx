@@ -5,6 +5,7 @@ import { QuizIntroHero } from "@/components/quiz/quiz-intro-hero"
 import { QuizPlayer } from "@/components/quiz/quiz-player"
 import { getDashboardSession } from "@/lib/auth/dashboard-session"
 import { buildPublishedSnapshot } from "@/lib/quiz/published-snapshot"
+import { resolveQuestionsPerAttempt } from "@/lib/quiz/question-subset"
 import { getQuizDraft } from "@/lib/quiz/queries"
 
 export const metadata: Metadata = {
@@ -28,10 +29,14 @@ export default async function QuizPreviewPage({ params }: PreviewPageProps) {
 
   return (
     <div className="min-h-svh bg-background">
-      <QuizPlayer snapshot={snapshot} isPreview>
+      <QuizPlayer quizId={draft.quiz.id} snapshot={snapshot} isPreview>
         <QuizIntroHero
           snapshot={snapshot}
-          questionCount={snapshot.questions.length}
+          questionCount={resolveQuestionsPerAttempt(
+            snapshot.random_question_subset,
+            snapshot.questions_per_attempt,
+            snapshot.questions.length
+          )}
           outcomeCount={snapshot.outcomes.length}
           isPreview
         />

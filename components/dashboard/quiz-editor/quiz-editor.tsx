@@ -58,11 +58,7 @@ type QuizEditorProps = {
   hasLiveChanges: boolean
 }
 
-export function QuizEditor({
-  draft,
-  access,
-  hasLiveChanges,
-}: QuizEditorProps) {
+export function QuizEditor({ draft, access, hasLiveChanges }: QuizEditorProps) {
   const router = useRouter()
   const [isCheckoutPending, startCheckout] = useTransition()
   const validationErrors = validateQuizForPublish(draft)
@@ -72,9 +68,7 @@ export function QuizEditor({
   function handleAiUpgrade() {
     if (!access.isPaid) {
       startCheckout(() => {
-        void redirectToStripeCheckout(() =>
-          startSubscriptionCheckout(quizPath)
-        )
+        void redirectToStripeCheckout(() => startSubscriptionCheckout(quizPath))
       })
       return
     }
@@ -127,16 +121,22 @@ export function QuizEditor({
             <h1 className="text-2xl font-semibold tracking-tight">
               {draft.quiz.quiz_title}
             </h1>
-            <Badge variant={draft.quiz.status === "published" ? "default" : "secondary"}>
+            <Badge
+              variant={
+                draft.quiz.status === "published" ? "default" : "secondary"
+              }
+            >
               {draft.quiz.status}
             </Badge>
           </div>
-          <p className="text-sm text-muted-foreground">{draft.quiz.book_title}</p>
+          <p className="text-sm text-muted-foreground">
+            {draft.quiz.book_title}
+          </p>
           {access.isInGracePeriod && access.graceEndsAt ? (
             <p className="text-xs text-amber-600 dark:text-amber-400">
               Billing grace period ends{" "}
-              {new Date(access.graceEndsAt).toLocaleDateString()}. Update payment
-              to keep quizzes live.
+              {new Date(access.graceEndsAt).toLocaleDateString()}. Update
+              payment to keep quizzes live.
             </p>
           ) : null}
           {draft.quiz.status === "draft" && !canPublishQuiz ? (
@@ -230,6 +230,8 @@ export function QuizEditor({
             questions={draft.questions}
             answers={draft.answers}
             outcomes={draft.outcomes}
+            randomQuestionSubset={draft.quiz.random_question_subset}
+            questionsPerAttempt={draft.quiz.questions_per_attempt}
           />
         </TabsContent>
         <TabsContent value="ai" className="mt-6">

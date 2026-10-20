@@ -1,5 +1,6 @@
 import Image from "next/image"
 
+import { formatQuestionCount } from "@/lib/quiz/question-subset"
 import type { PublishedQuizSnapshot } from "@/lib/quiz/types"
 
 type QuizIntroHeroProps = {
@@ -18,7 +19,7 @@ export function QuizIntroHero({
   return (
     <>
       {isPreview ? (
-        <p className="text-center text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        <p className="text-center text-xs font-medium tracking-wide text-muted-foreground uppercase">
           Author preview — draft content
         </p>
       ) : null}
@@ -45,7 +46,7 @@ export function QuizIntroHero({
           {snapshot.quiz_title}
         </h1>
         <p className="text-sm text-muted-foreground">
-          {questionCount} questions · {outcomeCount} possible results
+          {formatQuestionCount(questionCount)} · {outcomeCount} possible results
         </p>
       </div>
     </>

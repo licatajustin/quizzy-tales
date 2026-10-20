@@ -8,6 +8,7 @@ import { QuizPublicFooter } from "@/components/quiz/quiz-public-footer"
 import { QuizSeoContent } from "@/components/quiz/quiz-seo-content"
 import { buildQuizPageSchema } from "@/lib/seo/json-ld"
 import { getPublicQuizBySlug } from "@/lib/quiz/public-quiz"
+import { resolveQuestionsPerAttempt } from "@/lib/quiz/question-subset"
 import type { PublishedQuizSnapshot } from "@/lib/quiz/types"
 
 type PublicQuizPageProps = {
@@ -16,7 +17,10 @@ type PublicQuizPageProps = {
 
 export const revalidate = 3600
 
-function buildQuizMetadata(snapshot: PublishedQuizSnapshot, slug: string): Metadata {
+function buildQuizMetadata(
+  snapshot: PublishedQuizSnapshot,
+  slug: string
+): Metadata {
   const title = `${snapshot.quiz_title} — ${snapshot.book_title}`
   const description = `Which character from "${snapshot.book_title}" are you? Take the ${snapshot.quiz_title} quiz.`
   const url = `/q/${slug}`
@@ -80,7 +84,11 @@ export default async function PublicQuizPage({ params }: PublicQuizPageProps) {
     notFound()
   }
 
-  const questionCount = snapshot.questions.length
+  const questionCount = resolveQuestionsPerAttempt(
+    snapshot.random_question_subset,
+    snapshot.questions_per_attempt,
+    snapshot.questions.length
+  )
   const outcomeCount = snapshot.outcomes.length
   const description = `Which character from "${snapshot.book_title}" are you? Take the ${snapshot.quiz_title} quiz.`
   const outcomeNames = snapshot.outcomes.map((outcome) => outcome.name)

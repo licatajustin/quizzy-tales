@@ -1,13 +1,13 @@
 import type {
   AnswerRow,
-  OutcomeRow,
   PublishedQuizSnapshot,
-  QuestionRow,
   QuizDraft,
   QuizRow,
 } from "@/lib/quiz/types"
 
-export function buildPublishedSnapshot(draft: QuizDraft): PublishedQuizSnapshot {
+export function buildPublishedSnapshot(
+  draft: QuizDraft
+): PublishedQuizSnapshot {
   const answersByQuestion = draft.answers.reduce<Record<string, AnswerRow[]>>(
     (acc, answer) => {
       acc[answer.question_id] ??= []
@@ -46,7 +46,21 @@ export function buildPublishedSnapshot(draft: QuizDraft): PublishedQuizSnapshot 
             sort_order: answer.sort_order,
           })),
       })),
+    random_question_subset: draft.quiz.random_question_subset,
+    questions_per_attempt: draft.quiz.questions_per_attempt,
     published_at: new Date().toISOString(),
+  }
+}
+
+function comparableSnapshot(snapshot: PublishedQuizSnapshot) {
+  return {
+    quiz_title: snapshot.quiz_title,
+    book_title: snapshot.book_title,
+    cover_image_url: snapshot.cover_image_url,
+    outcomes: snapshot.outcomes,
+    questions: snapshot.questions,
+    random_question_subset: snapshot.random_question_subset ?? false,
+    questions_per_attempt: snapshot.questions_per_attempt ?? null,
   }
 }
 
@@ -66,7 +80,9 @@ export function validateQuizForPublish(draft: QuizDraft) {
       (answer) => answer.question_id === question.id
     )
     if (answers.length < 2) {
-      errors.push(`Question "${question.question_text}" needs at least 2 answers.`)
+      errors.push(
+        `Question "${question.question_text}" needs at least 2 answers.`
+      )
     }
   }
 
@@ -113,8 +129,8 @@ export function hasUnpublishedChanges(
     return true
   }
 
-  const current = { ...draftSnapshot, published_at: quiz.published_snapshot.published_at }
-  const previous = { ...quiz.published_snapshot }
-
-  return JSON.stringify(current) !== JSON.stringify(previous)
+  return (
+    JSON.stringify(comparableSnapshot(draftSnapshot)) !==
+    JSON.stringify(comparableSnapshot(quiz.published_snapshot))
+  )
 }
