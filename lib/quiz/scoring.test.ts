@@ -1,7 +1,12 @@
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 
-import { calculateWinningOutcome } from "./scoring.ts"
+import {
+  calculateWinningOutcome,
+  outcomePointShares,
+  scoreOutcomeAttempt,
+  tallyOutcomeScores,
+} from "./scoring.ts"
 import type { OutcomeRow } from "./types.ts"
 
 function outcome(id: string, sortOrder: number): OutcomeRow {
@@ -148,5 +153,155 @@ describe("calculateWinningOutcome", () => {
 
   it("returns null when the quiz has no outcomes", () => {
     assert.equal(calculateWinningOutcome([], ["a"], []), null)
+  })
+})
+
+const namedOutcomes = [
+  { id: "wind", name: "Wind" },
+  { id: "fire", name: "Fire" },
+  { id: "earth", name: "Earth" },
+]
+
+describe("outcomePointShares", () => {
+  it("uses the same tally and tie-break as the winner", () => {
+    const answers = [
+      { id: "a1", weights: { wind: 3, fire: 1, earth: 0 } },
+      { id: "a2", weights: { wind: 2, fire: 2, earth: 2 } },
+    ]
+    const selected = ["a1", "a2"]
+    const scores = tallyOutcomeScores(namedOutcomes, selected, answers)
+    const scored = scoreOutcomeAttempt(namedOutcomes, selected, answers, "quiz")
+    const winner = calculateWinningOutcome(
+      namedOutcomes,
+      selected,
+      answers,
+      "quiz"
+    )
+
+    assert.deepEqual(scored.scores, scores)
+    assert.equal(scored.winner?.id, winner?.id)
+    assert.equal(scored.winner?.id, "wind")
+    assert.equal(scored.shares[0]?.id, winner?.id)
+    assert.deepEqual(
+      scored.shares.map((share) => [share.name, share.points, share.percent]),
+      [
+        ["Wind", 5, 50],
+        ["Fire", 3, 30],
+        ["Earth", 2, 20],
+      ]
+    )
+  })
+
+  it("puts the tie-broken winner first when the points are equal", () => {
+    const answers = [{ id: "a1", weights: { wind: 1, fire: 1, earth: 1 } }]
+    const selected = ["a1"]
+    const seed = "attempt-1"
+    const winner = calculateWinningOutcome(
+      namedOutcomes,
+      selected,
+      answers,
+      seed
+    )
+    const scored = scoreOutcomeAttempt(namedOutcomes, selected, answers, seed)
+    const reversed = scoreOutcomeAttempt(
+      [...namedOutcomes].reverse(),
+      selected,
+      answers,
+      seed
+    )
+
+    assert.equal(scored.winner?.id, winner?.id)
+    assert.equal(scored.shares[0]?.id, winner?.id)
+    assert.equal(reversed.winner?.id, winner?.id)
+    assert.equal(reversed.shares[0]?.id, winner?.id)
+    assert.ok(
+      (scored.shares[0]?.percent ?? 0) >= (scored.shares[1]?.percent ?? 0)
+    )
+    assert.equal(
+      scored.shares.reduce((sum, share) => sum + share.percent, 0),
+      100
+    )
+  })
+
+  it("rounds shares so they sum to 100", () => {
+    const shares = outcomePointShares(namedOutcomes, {
+      wind: 1,
+      fire: 1,
+      earth: 1,
+    })
+
+    assert.deepEqual(
+      shares.map((share) => share.percent),
+      [34, 33, 33]
+    )
+    assert.equal(
+      shares.reduce((sum, share) => sum + share.percent, 0),
+      100
+    )
+  })
+
+  it("keeps an even split when the points divide cleanly", () => {
+    const shares = outcomePointShares(
+      [
+        { id: "wind", name: "Wind" },
+        { id: "fire", name: "Fire" },
+      ],
+      { wind: 1, fire: 1 }
+    )
+
+    assert.deepEqual(
+      shares.map((share) => [share.id, share.percent]),
+      [
+        ["wind", 50],
+        ["fire", 50],
+      ]
+    )
+  })
+
+  it("drops negative points out of the share and keeps them at 0%", () => {
+    const shares = outcomePointShares(namedOutcomes, {
+      wind: 5,
+      fire: -3,
+      earth: 5,
+    })
+
+    assert.deepEqual(
+      shares.map((share) => [share.id, share.points, share.percent]),
+      [
+        ["wind", 5, 50],
+        ["earth", 5, 50],
+        ["fire", -3, 0],
+      ]
+    )
+  })
+
+  it("returns zeros when nobody scored", () => {
+    const shares = outcomePointShares(namedOutcomes, {
+      wind: 0,
+      fire: 0,
+      earth: 0,
+    })
+
+    assert.deepEqual(
+      shares.map((share) => share.percent),
+      [0, 0, 0]
+    )
+  })
+
+  it("ignores non-finite scores", () => {
+    const shares = outcomePointShares(namedOutcomes, {
+      wind: Number.NaN,
+      fire: 2,
+      earth: Number.POSITIVE_INFINITY,
+    })
+
+    assert.deepEqual(
+      shares.map((share) => [share.id, share.percent]),
+      [
+        ["fire", 100],
+        ["wind", 0],
+        ["earth", 0],
+      ]
+    )
   })
 })

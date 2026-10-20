@@ -10,9 +10,10 @@ import {
 import Image from "next/image"
 import { RotateCcw } from "lucide-react"
 
-import { OutcomeResultBody } from "@/components/quiz/outcome-result-body"
+import { QuizResult } from "@/components/quiz/quiz-result"
 import { QuizResultLinks } from "@/components/quiz/quiz-result-links"
 import { QuizShareButton } from "@/components/quiz/quiz-share-button"
+import { ResultReveal } from "@/components/quiz/result-reveal"
 
 import {
   getAnonymousId,
@@ -40,8 +41,12 @@ import {
 } from "@/lib/quiz/question-subset"
 import { normalizePublishedSnapshot } from "@/lib/quiz/published-snapshot"
 import { snapshotReaderLinks } from "@/lib/quiz/reader-links"
+import { isRestoredFinishedResult } from "@/lib/quiz/result-reveal"
 import { resultSharePath } from "@/lib/quiz/share"
-import { calculateWinningOutcome } from "@/lib/quiz/scoring"
+import {
+  calculateWinningOutcome,
+  scoreOutcomeAttempt,
+} from "@/lib/quiz/scoring"
 import type { PublishedQuizSnapshot } from "@/lib/quiz/types"
 import { cn } from "@/lib/utils"
 
@@ -202,17 +207,22 @@ export function QuizPlayer({
 
   const tieBreakSeed = questions.map((question) => question.id).join("\u0000")
 
-  const winningOutcome = useMemo(() => {
-    const winner = calculateWinningOutcome(
-      outcomes,
-      allSelectedAnswerIds,
-      allAnswers,
-      tieBreakSeed
-    )
-    return winner
-      ? (outcomes.find((outcome) => outcome.id === winner.id) ?? outcomes[0])
-      : outcomes[0]
-  }, [allAnswers, allSelectedAnswerIds, outcomes, tieBreakSeed])
+  const scoredAttempt = useMemo(
+    () =>
+      scoreOutcomeAttempt(
+        outcomes,
+        allSelectedAnswerIds,
+        allAnswers,
+        tieBreakSeed
+      ),
+    [allAnswers, allSelectedAnswerIds, outcomes, tieBreakSeed]
+  )
+  const winningOutcome = scoredAttempt.winner ?? outcomes[0]
+  const restoredFinishedResult = isRestoredFinishedResult({
+    subsetActive,
+    restoredState: restored?.state ?? null,
+    hasSessionOverride: subsetSession !== null,
+  })
 
   useEffect(() => {
     if (!subsetActive || !attemptReady) {
@@ -595,60 +605,60 @@ export function QuizPlayer({
 
   if (state === "result" && winningOutcome) {
     return (
-      <div className="mx-auto flex min-h-[70vh] w-full max-w-2xl flex-col justify-center gap-8 px-6 py-12">
-        <OutcomeResultBody outcome={winningOutcome}>
-          {winningOutcome.image_url ? (
-            <div className="relative mx-auto aspect-square w-full max-w-xs overflow-hidden rounded-2xl border border-border/60">
-              <Image
-                src={winningOutcome.image_url}
-                alt={`${winningOutcome.name} from ${snapshot.quiz_title}`}
-                fill
-                className="object-cover"
-                sizes="(max-width: 768px) 80vw, 20rem"
-                unoptimized={winningOutcome.image_url.startsWith("data:")}
-              />
-            </div>
-          ) : null}
-        </OutcomeResultBody>
+      <ResultReveal skip={restoredFinishedResult}>
+        {/*
+          Slots below the profile, left for sibling work:
+          continueStory — "Continue the story"
+          exploreResults — "Explore the other results"
+          resultShare — per-result share links
+          Reader links stay after share and retake.
+        */}
+        <QuizResult
+          outcome={winningOutcome}
+          quizTitle={snapshot.quiz_title}
+          shares={scoredAttempt.shares}
+          actions={
+            <>
+              {trackingEnabled && quizId && slug ? (
+                <QuizShareButton
+                  quizId={quizId}
+                  sessionId={sessionId}
+                  quizTitle={snapshot.quiz_title}
+                  outcomeName={winningOutcome.name}
+                  outcomeTagline={winningOutcome.tagline ?? ""}
+                  resultPath={resultSharePath(slug, winningOutcome.id)}
+                />
+              ) : null}
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-full"
+                onClick={resetQuiz}
+              >
+                <RotateCcw data-icon="inline-start" />
+                Retake quiz
+              </Button>
+            </>
+          }
+          afterActions={
+            <QuizResultLinks
+              bookTitle={snapshot.book_title}
+              {...snapshotReaderLinks(snapshot)}
+              onBookClick={() => {
+                if (!trackingEnabled || !quizId) {
+                  return
+                }
 
-        <div className="flex flex-wrap justify-center gap-3">
-          {trackingEnabled && quizId && slug ? (
-            <QuizShareButton
-              quizId={quizId}
-              sessionId={sessionId}
-              quizTitle={snapshot.quiz_title}
-              outcomeName={winningOutcome.name}
-              outcomeTagline={winningOutcome.tagline ?? ""}
-              resultPath={resultSharePath(slug, winningOutcome.id)}
+                trackEvent({
+                  event: "book_cta_click",
+                  quizId,
+                  sessionId,
+                })
+              }}
             />
-          ) : null}
-          <Button
-            type="button"
-            variant="outline"
-            className="rounded-full"
-            onClick={resetQuiz}
-          >
-            <RotateCcw data-icon="inline-start" />
-            Retake quiz
-          </Button>
-        </div>
-
-        <QuizResultLinks
-          bookTitle={snapshot.book_title}
-          {...snapshotReaderLinks(snapshot)}
-          onBookClick={() => {
-            if (!trackingEnabled || !quizId) {
-              return
-            }
-
-            trackEvent({
-              event: "book_cta_click",
-              quizId,
-              sessionId,
-            })
-          }}
+          }
         />
-      </div>
+      </ResultReveal>
     )
   }
 
